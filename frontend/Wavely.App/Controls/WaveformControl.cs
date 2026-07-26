@@ -15,12 +15,28 @@ namespace Wavely.App.Controls;
 /// </summary>
 public sealed class WaveformControl : Control
 {
-    private static readonly IBrush BarBrush = new SolidColorBrush(Color.FromArgb(220, 90, 170, 255));
+    private static readonly Color DefaultAccentColor = Color.FromArgb(220, 90, 170, 255);
     private const double MinBarScale = 0.12;
     private const double BarGap = 3.0;
     private const double BarCornerRadius = 2.0;
 
     private float[] _bands = [];
+    private Color _accentColor = DefaultAccentColor;
+    private IBrush _barBrush = new SolidColorBrush(DefaultAccentColor);
+
+    /// <summary>Bar fill color. Defaults to the static blue accent; overridden by Phase 6's
+    /// dynamic-color binding (<see cref="Wavely.App.Services.DynamicColorService"/>) when the
+    /// user has that enabled.</summary>
+    public Color AccentColor
+    {
+        get => _accentColor;
+        set
+        {
+            _accentColor = value;
+            _barBrush = new SolidColorBrush(value);
+            InvalidateVisual();
+        }
+    }
 
     public void UpdateBands(ReadOnlySpan<float> bands)
     {
@@ -54,7 +70,7 @@ public sealed class WaveformControl : Control
             var barHeight = scale * bounds.Height;
             var x = i * (barWidth + BarGap);
             var y = centerY - barHeight / 2.0;
-            context.DrawRectangle(BarBrush, null, new Rect(x, y, barWidth, barHeight), BarCornerRadius, BarCornerRadius);
+            context.DrawRectangle(_barBrush, null, new Rect(x, y, barWidth, barHeight), BarCornerRadius, BarCornerRadius);
         }
     }
 }
