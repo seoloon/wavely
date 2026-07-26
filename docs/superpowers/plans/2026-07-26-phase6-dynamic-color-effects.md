@@ -272,7 +272,7 @@ snippets — the amendment inside Task 4 corrects this.
 
 **Interfaces:**
 - Consumes: `DynamicColorService.Resolve(TrackInfo)`, `WidgetColorScheme`, `WaveformControl.AccentColor` (Tasks 1-2).
-- Produces: `MainWindow.ApplyDynamicColors(TrackInfo track)` — Task 5 extends this to also apply glow; `MainWindow._currentTrack` (`TrackInfo?`) — Task 4 reads this too. `BackgroundBorder.Background is SolidColorBrush` is the established access pattern for the background brush — there is no `BackgroundBrush` field.
+- Produces: `MainWindow.ApplyDynamicColors(TrackInfo track)` — Task 5 extends this to also apply glow; `MainWindow._currentTrack` (`TrackInfo?`) — Task 4 reads this too. `BackgroundBorder.Background is SolidColorBrush` is the access pattern used *at this point in the plan* — there is no `BackgroundBrush` field. **Task 4 later restructures the XAML and renames the element that carries this brush to `BackgroundTintBorder`** — see Task 4's amendment; the cast target changes accordingly from that task onward.
 
 - [ ] **Step 1 (original text, superseded by the amendment above — kept for history): Name the background brush**
 
@@ -470,9 +470,16 @@ git commit -m "feat: bind dynamic cover colors to widget background, waveform, a
 - Consumes: `CoverImage.Source` (already set in `OnTrackChanged`), `_config.CoverBlurEnabled`.
 - Produces: `MainWindow.ApplyBlurBackground()`.
 
-- [ ] **Step 1: Restructure the XAML to add a blurred background layer**
+**⚠️ Amendment (found by task review, fixed and re-verified):** the restructuring below moves the
+background `SolidColorBrush` off `BackgroundBorder` onto a new inner `Border` — that inner `Border`
+**must be named** (`x:Name="BackgroundTintBorder"`), and `ApplyAppearance()`/`ApplyDynamicColors()`
+must cast `BackgroundTintBorder.Background`, not `BackgroundBorder.Background` (which is `null`
+after this restructuring — `BackgroundBorder` itself keeps no `Background` of its own anymore, it's
+just the outer clipping/sizing container). The snippets below already reflect this corrected,
+final state. This does not reintroduce the "can't name a brush" constraint — `BackgroundTintBorder`
+names the `Border` (a `Control`, gets a generated field), not the `SolidColorBrush` inside it.
 
-**Note (per Task 3's amendment above): the background brush is unnamed** (naming it doesn't compile in this project) — keep it unnamed here too; every task accesses it via `BackgroundBorder.Background is SolidColorBrush`, never a `BackgroundBrush` field.
+- [ ] **Step 1: Restructure the XAML to add a blurred background layer**
 
 In `MainWindow.axaml`, replace:
 
@@ -490,7 +497,7 @@ with:
     <Border x:Name="BackgroundBorder" CornerRadius="16" ClipToBounds="True">
         <Grid>
             <Image x:Name="BlurBackgroundImage" Stretch="UniformToFill" IsVisible="False" />
-            <Border Padding="16">
+            <Border x:Name="BackgroundTintBorder" Padding="16">
                 <Border.Background>
                     <SolidColorBrush Color="#141418" Opacity="0.7" />
                 </Border.Background>
