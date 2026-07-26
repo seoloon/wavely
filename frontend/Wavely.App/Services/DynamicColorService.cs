@@ -32,6 +32,8 @@ public static class DynamicColorService
     /// widget should switch to dark text instead (WCAG relative luminance, 0=black, 1=white).</summary>
     private const double DarkTextLuminanceThreshold = 0.6;
 
+    /// <summary>Decodes a track's dominant colors into a resolved widget color scheme, or returns
+    /// <see cref="WidgetColorScheme.Default"/> if the track has no cover or the palette is undecodable.</summary>
     public static WidgetColorScheme Resolve(TrackInfo track)
     {
         var palette = Unpack(track.DominantColors);
