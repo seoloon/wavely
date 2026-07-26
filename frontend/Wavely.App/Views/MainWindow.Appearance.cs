@@ -27,7 +27,7 @@ public partial class MainWindow
     /// Opacity, so text/icons stay fully readable) and the app-wide dark/light theme variant.</summary>
     private void ApplyAppearance()
     {
-        if (BackgroundBorder.Background is SolidColorBrush backgroundBrush)
+        if (BackgroundTintBorder.Background is SolidColorBrush backgroundBrush)
         {
             backgroundBrush.Opacity = _config.BackgroundOpacity;
         }
@@ -47,7 +47,7 @@ public partial class MainWindow
     {
         var scheme = DynamicColorService.Resolve(track);
 
-        if (BackgroundBorder.Background is SolidColorBrush backgroundBrush)
+        if (BackgroundTintBorder.Background is SolidColorBrush backgroundBrush)
         {
             backgroundBrush.Color = _config.DynamicBackgroundEnabled ? scheme.Background : WidgetColorScheme.Default.Background;
         }
