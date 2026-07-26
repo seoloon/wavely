@@ -62,6 +62,8 @@ add_executable(Wavely WIN32
     src/settings/AppConfig.cpp
     src/ui/MainWidget.hpp
     src/ui/MainWidget.cpp
+    src/ui/VisibilityController.hpp
+    src/ui/VisibilityController.cpp
 )
 
 add_dependencies(Wavely WavelyWinrtHeaders)

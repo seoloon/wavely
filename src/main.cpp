@@ -12,7 +12,6 @@ int main(int argc, char* argv[]) {
     QApplication::setApplicationName(QStringLiteral("Wavely"));
 
     wavely::ui::MainWidget widget;
-    widget.show();
 
     wavely::core::MediaSessionManager::instance().start();
 
