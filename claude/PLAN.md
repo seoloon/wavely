@@ -53,7 +53,7 @@ Test : Pause/Play → le bool isPlaying change
 ## PHASE 2 — Widget Fenêtre & Interactions (Session 3)
 > *Durée : 1 session | Objectif : Le widget se déplace, redimensionne, s'affiche/cache*
 
-> **Statut (2026-07-26) : implémenté, non vérifié interactivement.** 2.1 est vérifié (fenêtre frameless réellement affichée, cf Phase 1). 2.2-2.6 sont portés depuis `MainWidget.cpp` (Qt) vers `MainWindow.axaml.cs` (`WndProcHook` pour WM_NCHITTEST/WM_EXITSIZEMOVE, `WS_EX_TRANSPARENT` pour le click-through, `ClickThroughHandle` pour la "safe zone", `DispatcherTimer` + `Transitions` Avalonia pour le masquage différé) et compilent/tournent sans erreur, mais aucune interaction souris (drag, molette, Ctrl+Click) n'a été exercée manuellement sur cette machine de dev — à valider à la prochaine session avant de cocher le checkpoint ci-dessous.
+> **Statut (2026-07-26) : livré et vérifié par interaction réelle (entrée souris/clavier synthétique via SendInput/mouse_event/keybd_event Win32, pas seulement compilation).** 2.1-2.4 vérifiés : drag (WM_NCHITTEST/HTCAPTION) déplace bien la fenêtre et persiste la position dans `settings.json` ; molette redimensionne exactement (360×120 → 468×156 à l'échelle 1.3) et clampe pile à 0.5 et 1.5 ; Ctrl+Click active le click-through (bit `WS_EX_TRANSPARENT` posé, vérifié via `GetWindowLong`, position persistée) et fait apparaître le handle "safe zone" à la position attendue ; cliquer le handle désactive le click-through (bit retiré, handle recaché). 2.5 (fade) vérifié indirectement via le fade-in au démarrage (Phase 1). **Non testé** : 2.6 (masquage différé sur pause) — aucun lecteur média disponible sur cette machine pour déclencher un vrai événement pause à la demande ; le code suit le même mécanisme `DispatcherTimer`/`Transitions` déjà vérifié pour le fade-in.
 
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|
@@ -76,7 +76,7 @@ Test : Play → Pause → timer → disparition → Play → réapparition insta
 ## PHASE 3 — System Tray & Auto-Start (Session 4)
 > *Durée : 1 session | Objectif : L'app vit dans la barre des tâches*
 
-> **Statut (2026-07-26) : implémenté, non vérifié interactivement.** `AppTrayIcon` (frontend) et `AutoStartManager` (backend, registre HKCU natif) sont portés et compilent ; le process tourne bien sans crash (fenêtre visible en tâche de fond, `ShutdownRequested` câblé pour arrêter `MediaSessionManager` proprement). Non testés manuellement sur cette machine : clic sur l'icône tray, toggle "Lancer au démarrage", quitter via le menu tray.
+> **Statut (2026-07-26) : `AutoStartManager` vérifié en isolation, `AppTrayIcon` non vérifié interactivement.** `AutoStartManager.IsEnabled()`/`SetEnabled()` testés via un harnais C# jetable consommant le même `Wavely.Backend.dll` : `SetEnabled(true)` écrit bien `HKCU\...\Run\Wavely` = `REG_SZ` `"<chemin.exe>"` (vérifié indépendamment via `reg query`, pas seulement en relisant via `IsEnabled()`), `SetEnabled(false)` la supprime. **Non testé** : clic réel sur l'icône tray (positionnement pixel-exact d'une icône system tray peu fiable à automatiser sans UI Automation dédiée), et donc le chemin `AppTrayIcon.OnClicked`/menu "Launch at startup"/"Quit" bout-en-bout — la logique de ces handlers est revue par code et appelle exactement les mêmes méthodes `AutoStartManager`/`MediaSessionManager.Refresh()`/`desktop.Shutdown()` déjà vérifiées ou triviales.
 
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|
