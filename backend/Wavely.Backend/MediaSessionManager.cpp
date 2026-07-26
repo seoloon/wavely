@@ -2,6 +2,8 @@
 #include "MediaSessionManager.h"
 #include "MediaSessionManager.g.cpp"
 
+#include "Core/MusicAppAllowlist.h"
+
 #include <chrono>
 #include <sstream>
 
@@ -25,6 +27,7 @@ namespace winrt::Wavely::Backend::implementation
                     << static_cast<unsigned>(ex.code().value) << L")\n";
             OutputDebugStringW(message.str().c_str());
         }
+
 
         void fillBasicMetadata(
             TrackInfo& track,
@@ -109,7 +112,7 @@ namespace winrt::Wavely::Backend::implementation
             return;
         }
         unsubscribeFromCurrentSession();
-        m_currentSession = m_sessionManager.GetCurrentSession();
+        m_currentSession = selectWhitelistedSession();
         if (!m_currentSession)
         {
             m_currentTrack = winrt::make<TrackInfo>();
@@ -120,6 +123,43 @@ namespace winrt::Wavely::Backend::implementation
         subscribeToCurrentSession();
         refreshPlaybackInfo();
         refreshMediaPropertiesAsync();
+    }
+
+    /// Picks the session to react to among every GSMTC-tracked app, restricted to
+    /// Core::IsWhitelistedAumid matches (see that header for why). Prefers one that is actually
+    /// Playing over one that's merely Paused/Stopped, so e.g. a paused Spotify session doesn't
+    /// keep winning over a Deezer session someone just started playing.
+    winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession MediaSessionManager::selectWhitelistedSession()
+    {
+        if (!m_sessionManager)
+        {
+            return nullptr;
+        }
+
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession firstMatch{ nullptr };
+        for (auto const& session : m_sessionManager.GetSessions())
+        {
+            if (!::Wavely::Backend::Core::IsWhitelistedAumid(session.SourceAppUserModelId()))
+            {
+                continue;
+            }
+            if (!firstMatch)
+            {
+                firstMatch = session;
+            }
+            try
+            {
+                if (session.GetPlaybackInfo().PlaybackStatus() == GlobalSystemMediaTransportControlsSessionPlaybackStatus::Playing)
+                {
+                    return session;
+                }
+            }
+            catch (winrt::hresult_error const&)
+            {
+                // The session ended between GetSessions() and this read; keep looking.
+            }
+        }
+        return firstMatch;
     }
 
     void MediaSessionManager::subscribeToCurrentSession()

@@ -6,10 +6,15 @@
 
 namespace winrt::Wavely::Backend::implementation
 {
-    /// Observes the system-wide GSMTC session (Spotify, YouTube Music, Deezer, ...) and
-    /// republishes playback state, metadata and cover art as WinRT events consumed by the
-    /// frontend. Callbacks guard against the object having been Stop()'d mid-flight (RULES.md
-    /// SS4: the frontend can disconnect at any time).
+    /// Observes GSMTC sessions and republishes playback state, metadata and cover art as WinRT
+    /// events consumed by the frontend. Callbacks guard against the object having been Stop()'d
+    /// mid-flight (RULES.md SS4: the frontend can disconnect at any time).
+    ///
+    /// Only reacts to whitelisted native music-streaming apps (see Core/MusicAppAllowlist.h) -
+    /// GSMTC's own GetCurrentSession() picks whichever session most recently had activity, which
+    /// in practice means any browser tab playing a video routinely wins over an actually-playing
+    /// music app (observed directly: a Brave tab pre-empted a concurrently playing Spotify
+    /// track). GetSessions() + explicit filtering is used instead.
     struct MediaSessionManager : MediaSessionManagerT<MediaSessionManager>
     {
         MediaSessionManager() = default;
@@ -29,6 +34,7 @@ namespace winrt::Wavely::Backend::implementation
     private:
         winrt::fire_and_forget initializeAsync();
         void onSessionsChanged();
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession selectWhitelistedSession();
         void subscribeToCurrentSession();
         void unsubscribeFromCurrentSession();
         void refreshPlaybackInfo();

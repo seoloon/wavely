@@ -3,10 +3,14 @@
 #include "WaveformEngine.g.cpp"
 
 #include "Core/ComPtr.h"
+#include "Core/Handle.h"
+#include "Core/MusicAppAllowlist.h"
 #include "Core/WinrtGuard.h"
 
 #include <audioclient.h>
+#include <audioclientactivationparams.h>
 #include <audiopolicy.h>
+#include <propidl.h>
 
 #include <algorithm>
 #include <array>
@@ -17,6 +21,7 @@
 #include <memory>
 #include <numbers>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace winrt::Wavely::Backend::implementation
@@ -28,8 +33,14 @@ namespace winrt::Wavely::Backend::implementation
 
         constexpr std::chrono::milliseconds kEmitInterval{ 16 };
         constexpr std::chrono::milliseconds kPollInterval{ 5 };
-        constexpr std::chrono::seconds kDeviceReevaluationInterval{ 2 };
+        constexpr std::chrono::seconds kTargetReevaluationInterval{ 2 };
         constexpr REFERENCE_TIME kBufferDuration = 200 * 10'000; // 200ms, expressed in 100ns units.
+        // Process-loopback-activated IAudioClient instances don't support GetMixFormat (there is
+        // no real device to query a mix format from), so the capture format has to be supplied
+        // up front instead of negotiated. Float32/48kHz/stereo matches the shared-mode engine
+        // format WASAPI uses on essentially all modern Windows installs.
+        constexpr std::uint32_t kCaptureSampleRate = 48000;
+        constexpr std::uint16_t kCaptureChannelCount = 2;
         // Typical program material (streamed video commentary, loudness-normalized music) sits
         // well below full scale - a raw magnitude spectrum alone renders as visually flat for
         // anything but very loud test tones. sqrt() is the standard perceptual curve real VU
@@ -122,181 +133,174 @@ namespace winrt::Wavely::Backend::implementation
             return std::clamp<std::size_t>(static_cast<std::size_t>(std::lround(bin)), minBin, maxBin);
         }
 
-        std::wstring getDeviceId(IMMDevice* device)
+        /// Resolves a PID to its executable file name (e.g. L"Spotify.exe", no path). Empty on
+        /// failure (process exited, insufficient access, ...).
+        std::wstring getProcessImageName(DWORD processId)
         {
-            if (device == nullptr)
+            ::Wavely::Backend::Core::UniqueHandle process(
+                OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, processId));
+            if (!process)
             {
                 return {};
             }
-            LPWSTR rawId = nullptr;
-            if (FAILED(device->GetId(&rawId)))
+            wchar_t buffer[MAX_PATH];
+            DWORD size = static_cast<DWORD>(std::size(buffer));
+            if (!QueryFullProcessImageNameW(process.get(), 0, buffer, &size))
             {
                 return {};
             }
-            const std::unique_ptr<wchar_t, decltype(&CoTaskMemFree)> id(rawId, CoTaskMemFree);
-            return std::wstring(id.get());
+            const std::wstring_view path(buffer, size);
+            const auto lastSlash = path.find_last_of(L"\\/");
+            return std::wstring(lastSlash == std::wstring_view::npos ? path : path.substr(lastSlash + 1));
         }
 
-        /// True if `device` has at least one audio session actively rendering right now - the
-        /// same state Volume Mixer's per-app animated icon reflects.
-        bool deviceHasActiveSession(IMMDevice* device)
+        /// Finds the process ID of a whitelisted music app (Core::IsWhitelistedProcessName) that
+        /// currently has an *actively rendering* audio session, scanning every render device's
+        /// session list rather than just the default device: the session-active signal stays
+        /// reliable even for apps individually routed through Elgato Wave Link or similar
+        /// per-app routing software (ADR-003's finding was that only the *loopback sample data*
+        /// on those virtual devices is broken, not the session state itself).
+        ///
+        /// Apps like Spotify run as several same-named processes (one per Chromium
+        /// renderer/GPU/utility role, confirmed directly on this project - a running Spotify
+        /// client showed 7 distinct "Spotify.exe" PIDs); this finds the *specific* PID that is
+        /// actually rendering audio right now rather than an arbitrary one, since process-
+        /// loopback capture is scoped to a target PID (plus its process tree).
+        DWORD findWhitelistedActiveProcessId(IMMDeviceEnumerator* enumerator)
         {
-            ::Wavely::Backend::Core::ComPtr<IAudioSessionManager2> sessionManager;
-            if (FAILED(device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, sessionManager.put_void())))
+            ::Wavely::Backend::Core::ComPtr<IMMDeviceCollection> collection;
+            if (FAILED(enumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, collection.put())))
             {
-                return false;
+                return 0;
             }
 
-            ::Wavely::Backend::Core::ComPtr<IAudioSessionEnumerator> sessionEnumerator;
-            if (FAILED(sessionManager->GetSessionEnumerator(sessionEnumerator.put())))
+            UINT deviceCount = 0;
+            collection->GetCount(&deviceCount);
+            for (UINT d = 0; d < deviceCount; ++d)
             {
-                return false;
-            }
-
-            int sessionCount = 0;
-            if (FAILED(sessionEnumerator->GetCount(&sessionCount)))
-            {
-                return false;
-            }
-
-            for (int i = 0; i < sessionCount; ++i)
-            {
-                ::Wavely::Backend::Core::ComPtr<IAudioSessionControl> session;
-                if (FAILED(sessionEnumerator->GetSession(i, session.put())))
+                ::Wavely::Backend::Core::ComPtr<IMMDevice> device;
+                if (FAILED(collection->Item(d, device.put())))
                 {
                     continue;
                 }
-                AudioSessionState state{};
-                if (SUCCEEDED(session->GetState(&state)) && state == AudioSessionStateActive)
+
+                ::Wavely::Backend::Core::ComPtr<IAudioSessionManager2> sessionManager;
+                if (FAILED(device->Activate(__uuidof(IAudioSessionManager2), CLSCTX_ALL, nullptr, sessionManager.put_void())))
                 {
-                    return true;
+                    continue;
                 }
-            }
-            return false;
-        }
-
-        /// Some virtual audio devices (Elgato Wave Link's routing endpoints, observed directly
-        /// on this project - see docs/ADR-003) report an actively-rendering session but hand back
-        /// all-zero sample data on WASAPI loopback: AUDCLNT_BUFFERFLAGS_SILENT is never set, the
-        /// buffer is just zeroed. deviceHasActiveSession alone can't tell the difference, so this
-        /// briefly opens a real loopback capture on the candidate and checks whether any sample
-        /// is actually non-zero before committing to it for the full capture session.
-        bool deviceHasRealAudioData(IMMDevice* device)
-        {
-            ::Wavely::Backend::Core::ComPtr<IAudioClient> audioClient;
-            if (FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, audioClient.put_void())))
-            {
-                return false;
-            }
-
-            WAVEFORMATEX* rawMixFormat = nullptr;
-            if (FAILED(audioClient->GetMixFormat(&rawMixFormat)))
-            {
-                return false;
-            }
-            const std::unique_ptr<WAVEFORMATEX, decltype(&CoTaskMemFree)> mixFormat(rawMixFormat, CoTaskMemFree);
-            if (mixFormat->wBitsPerSample != 32)
-            {
-                return false;
-            }
-            const std::uint32_t channelCount = mixFormat->nChannels;
-
-            constexpr REFERENCE_TIME probeBufferDuration = 100 * 10'000; // 100ms, in 100ns units.
-            if (FAILED(audioClient->Initialize(
-                AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, probeBufferDuration, 0, mixFormat.get(), nullptr)))
-            {
-                return false;
-            }
-
-            ::Wavely::Backend::Core::ComPtr<IAudioCaptureClient> captureClient;
-            if (FAILED(audioClient->GetService(__uuidof(IAudioCaptureClient), captureClient.put_void())))
-            {
-                return false;
-            }
-
-            if (FAILED(audioClient->Start()))
-            {
-                return false;
-            }
-
-            bool foundNonZero = false;
-            for (int attempt = 0; attempt < 6 && !foundNonZero; ++attempt)
-            {
-                std::this_thread::sleep_for(std::chrono::milliseconds(20));
-
-                UINT32 packetLength = 0;
-                if (FAILED(captureClient->GetNextPacketSize(&packetLength)))
+                ::Wavely::Backend::Core::ComPtr<IAudioSessionEnumerator> sessionEnumerator;
+                if (FAILED(sessionManager->GetSessionEnumerator(sessionEnumerator.put())))
                 {
-                    break;
+                    continue;
                 }
-                while (packetLength != 0)
+                int sessionCount = 0;
+                if (FAILED(sessionEnumerator->GetCount(&sessionCount)))
                 {
-                    BYTE* data = nullptr;
-                    UINT32 frameCount = 0;
-                    DWORD flags = 0;
-                    if (FAILED(captureClient->GetBuffer(&data, &frameCount, &flags, nullptr, nullptr)))
-                    {
-                        packetLength = 0;
-                        break;
-                    }
-                    if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT))
-                    {
-                        const auto* samples = reinterpret_cast<const float*>(data);
-                        const std::uint32_t sampleCount = frameCount * channelCount;
-                        for (std::uint32_t i = 0; i < sampleCount && !foundNonZero; ++i)
-                        {
-                            foundNonZero = samples[i] != 0.0f;
-                        }
-                    }
-                    captureClient->ReleaseBuffer(frameCount);
-                    if (foundNonZero || FAILED(captureClient->GetNextPacketSize(&packetLength)))
-                    {
-                        break;
-                    }
+                    continue;
                 }
-            }
 
-            audioClient->Stop();
-            return foundNonZero;
-        }
-
-        /// Prefers the system default render device (the common case, and cheapest to check);
-        /// falls back to scanning every active render device for one with a live session AND
-        /// real (non-zero) loopback data - the per-app-routed case (Elgato Wave Link,
-        /// VoiceMeeter, and similar). Some per-app virtual routing (observed directly: Elgato
-        /// Wave Link's independent per-app channels, e.g. for Spotify) never surfaces real audio
-        /// on any WASAPI loopback-able endpoint at all - that is an architectural limit of the
-        /// routing software, not something detectable/fixable here, so the final fallback is
-        /// still the default device even when nothing checked out as genuinely audible.
-        ::Wavely::Backend::Core::ComPtr<IMMDevice> findBestRenderDevice(IMMDeviceEnumerator* enumerator)
-        {
-            ::Wavely::Backend::Core::ComPtr<IMMDevice> defaultDevice;
-            enumerator->GetDefaultAudioEndpoint(eRender, eConsole, defaultDevice.put());
-            if (defaultDevice && deviceHasActiveSession(defaultDevice.get()) && deviceHasRealAudioData(defaultDevice.get()))
-            {
-                return defaultDevice;
-            }
-
-            ::Wavely::Backend::Core::ComPtr<IMMDeviceCollection> collection;
-            if (SUCCEEDED(enumerator->EnumAudioEndpoints(eRender, DEVICE_STATE_ACTIVE, collection.put())))
-            {
-                UINT count = 0;
-                collection->GetCount(&count);
-                for (UINT i = 0; i < count; ++i)
+                for (int i = 0; i < sessionCount; ++i)
                 {
-                    ::Wavely::Backend::Core::ComPtr<IMMDevice> candidate;
-                    if (FAILED(collection->Item(i, candidate.put())))
+                    ::Wavely::Backend::Core::ComPtr<IAudioSessionControl> session;
+                    if (FAILED(sessionEnumerator->GetSession(i, session.put())))
                     {
                         continue;
                     }
-                    if (deviceHasActiveSession(candidate.get()) && deviceHasRealAudioData(candidate.get()))
+                    AudioSessionState state{};
+                    if (FAILED(session->GetState(&state)) || state != AudioSessionStateActive)
                     {
-                        return candidate;
+                        continue;
+                    }
+                    const auto session2 = session.try_as<IAudioSessionControl2>();
+                    if (!session2)
+                    {
+                        continue;
+                    }
+                    DWORD processId = 0;
+                    if (FAILED(session2->GetProcessId(&processId)) || processId == 0)
+                    {
+                        continue;
+                    }
+                    if (::Wavely::Backend::Core::IsWhitelistedProcessName(getProcessImageName(processId)))
+                    {
+                        return processId;
                     }
                 }
             }
+            return 0;
+        }
 
-            return defaultDevice;
+        /// Bridges the callback-based ActivateAudioInterfaceAsync into a synchronous call: the
+        /// capture thread already blocks on WASAPI calls throughout this file, so there is no
+        /// reason to keep this one asynchronous too. winrt::implements provides the classic COM
+        /// IUnknown plumbing for IActivateAudioInterfaceCompletionHandler even though it isn't an
+        /// IInspectable-based WinRT interface - it only requires deriving from IUnknown, which is
+        /// true here.
+        struct ActivationCompletionHandler : winrt::implements<ActivationCompletionHandler, IActivateAudioInterfaceCompletionHandler>
+        {
+            ::Wavely::Backend::Core::UniqueHandle completedEvent{ CreateEventW(nullptr, TRUE, FALSE, nullptr) };
+            HRESULT activateResult = E_FAIL;
+            winrt::com_ptr<IUnknown> activatedInterface;
+
+            HRESULT __stdcall ActivateCompleted(IActivateAudioInterfaceAsyncOperation* operation) noexcept override
+            {
+                IUnknown* rawInterface = nullptr;
+                operation->GetActivateResult(&activateResult, &rawInterface);
+                activatedInterface.attach(rawInterface);
+                SetEvent(completedEvent.get());
+                return S_OK;
+            }
+        };
+
+        /// Activates process-scoped WASAPI loopback capture for `processId` - captures that
+        /// process's (and its child processes') audio output directly, before it reaches any
+        /// render device or app-routing software (Elgato Wave Link, VoiceMeeter, ...). This is
+        /// what makes capture immune to ADR-003's "virtual device hands back all-zero samples"
+        /// problem: there is no device involved in the capture path at all. See
+        /// docs/ADR-004-per-process-loopback-capture.md.
+        ::Wavely::Backend::Core::ComPtr<IAudioClient> activateProcessLoopbackClient(DWORD processId)
+        {
+            AUDIOCLIENT_ACTIVATION_PARAMS params{};
+            params.ActivationType = AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK;
+            params.ProcessLoopbackParams.TargetProcessId = processId;
+            params.ProcessLoopbackParams.ProcessLoopbackMode = PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE;
+
+            PROPVARIANT activationParams{};
+            activationParams.vt = VT_BLOB;
+            activationParams.blob.cbSize = sizeof(params);
+            activationParams.blob.pBlobData = reinterpret_cast<BYTE*>(&params);
+
+            const auto handler = winrt::make_self<ActivationCompletionHandler>();
+            if (!handler->completedEvent)
+            {
+                logFailure(L"failed to create the activation-completed event", HRESULT_FROM_WIN32(GetLastError()));
+                return nullptr;
+            }
+
+            ::Wavely::Backend::Core::ComPtr<IActivateAudioInterfaceAsyncOperation> asyncOp;
+            const HRESULT hr = ActivateAudioInterfaceAsync(
+                VIRTUAL_AUDIO_DEVICE_PROCESS_LOOPBACK, __uuidof(IAudioClient), &activationParams, handler.get(), asyncOp.put());
+            if (FAILED(hr))
+            {
+                logFailure(L"ActivateAudioInterfaceAsync failed", hr);
+                return nullptr;
+            }
+
+            // Activation completes essentially immediately in practice (no device I/O involved);
+            // the timeout is only a safety net against hanging the capture thread forever.
+            if (WaitForSingleObject(handler->completedEvent.get(), 2000) != WAIT_OBJECT_0)
+            {
+                logFailure(L"process-loopback activation timed out", E_FAIL);
+                return nullptr;
+            }
+            if (FAILED(handler->activateResult) || !handler->activatedInterface)
+            {
+                logFailure(L"process-loopback activation failed", handler->activateResult);
+                return nullptr;
+            }
+
+            return handler->activatedInterface.try_as<IAudioClient>();
         }
     }
 
@@ -341,64 +345,49 @@ namespace winrt::Wavely::Backend::implementation
 
         while (m_running.load(std::memory_order_relaxed))
         {
-            const auto device = findBestRenderDevice(enumerator.get());
-            if (!device)
+            const DWORD processId = findWhitelistedActiveProcessId(enumerator.get());
+            if (processId == 0)
             {
-                logFailure(L"no render device available", E_FAIL);
-                std::this_thread::sleep_for(kDeviceReevaluationInterval);
+                std::this_thread::sleep_for(kTargetReevaluationInterval);
                 continue;
             }
-            runCaptureSession(enumerator.get(), device.get());
+            runProcessCaptureSession(enumerator.get(), processId);
         }
     }
 
-    void WaveformEngine::runCaptureSession(IMMDeviceEnumerator* enumerator, IMMDevice* device)
+    void WaveformEngine::runProcessCaptureSession(IMMDeviceEnumerator* enumerator, DWORD processId)
     {
-        ::Wavely::Backend::Core::ComPtr<IAudioClient> audioClient;
-        HRESULT hr = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, audioClient.put_void());
-        if (FAILED(hr))
+        const auto audioClient = activateProcessLoopbackClient(processId);
+        if (!audioClient)
         {
-            logFailure(L"failed to activate the audio client", hr);
-            std::this_thread::sleep_for(kDeviceReevaluationInterval);
+            std::this_thread::sleep_for(kTargetReevaluationInterval);
             return;
         }
 
-        WAVEFORMATEX* rawMixFormat = nullptr;
-        hr = audioClient->GetMixFormat(&rawMixFormat);
+        WAVEFORMATEX format{};
+        format.wFormatTag = WAVE_FORMAT_IEEE_FLOAT;
+        format.nChannels = kCaptureChannelCount;
+        format.nSamplesPerSec = kCaptureSampleRate;
+        format.wBitsPerSample = 32;
+        format.nBlockAlign = static_cast<WORD>(format.nChannels * format.wBitsPerSample / 8);
+        format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
+
+        HRESULT hr = audioClient->Initialize(
+            AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, kBufferDuration, 0, &format, nullptr);
         if (FAILED(hr))
         {
-            logFailure(L"failed to get the mix format", hr);
-            std::this_thread::sleep_for(kDeviceReevaluationInterval);
+            logFailure(L"failed to initialize the process-loopback audio client", hr);
+            std::this_thread::sleep_for(kTargetReevaluationInterval);
             return;
         }
-        const std::unique_ptr<WAVEFORMATEX, decltype(&CoTaskMemFree)> mixFormat(rawMixFormat, CoTaskMemFree);
-
-        if (mixFormat->wBitsPerSample != 32)
-        {
-            // The WASAPI shared-mode engine format is effectively always 32-bit IEEE float on
-            // modern Windows; bail rather than mis-decode an unexpected format.
-            logFailure(L"unexpected non-float mix format", E_NOTIMPL);
-            std::this_thread::sleep_for(kDeviceReevaluationInterval);
-            return;
-        }
-        const std::uint32_t channelCount = mixFormat->nChannels;
-        m_sampleRate = mixFormat->nSamplesPerSec;
-
-        hr = audioClient->Initialize(
-            AUDCLNT_SHAREMODE_SHARED, AUDCLNT_STREAMFLAGS_LOOPBACK, kBufferDuration, 0, mixFormat.get(), nullptr);
-        if (FAILED(hr))
-        {
-            logFailure(L"failed to initialize the audio client", hr);
-            std::this_thread::sleep_for(kDeviceReevaluationInterval);
-            return;
-        }
+        m_sampleRate = format.nSamplesPerSec;
 
         ::Wavely::Backend::Core::ComPtr<IAudioCaptureClient> captureClient;
         hr = audioClient->GetService(__uuidof(IAudioCaptureClient), captureClient.put_void());
         if (FAILED(hr))
         {
             logFailure(L"failed to get the capture client", hr);
-            std::this_thread::sleep_for(kDeviceReevaluationInterval);
+            std::this_thread::sleep_for(kTargetReevaluationInterval);
             return;
         }
 
@@ -406,13 +395,12 @@ namespace winrt::Wavely::Backend::implementation
         if (FAILED(hr))
         {
             logFailure(L"failed to start the audio client", hr);
-            std::this_thread::sleep_for(kDeviceReevaluationInterval);
+            std::this_thread::sleep_for(kTargetReevaluationInterval);
             return;
         }
 
-        const std::wstring currentDeviceId = getDeviceId(device);
         auto lastEmit = std::chrono::steady_clock::now();
-        auto lastDeviceCheck = lastEmit;
+        auto lastTargetCheck = lastEmit;
         std::vector<float> monoScratch;
         monoScratch.reserve(kFftSize);
 
@@ -439,7 +427,7 @@ namespace winrt::Wavely::Backend::implementation
                 else
                 {
                     monoScratch.clear();
-                    monoMixInto(reinterpret_cast<const float*>(data), frameCount, channelCount, monoScratch);
+                    monoMixInto(reinterpret_cast<const float*>(data), frameCount, kCaptureChannelCount, monoScratch);
                 }
                 m_ringBuffer.Write(monoScratch.data(), monoScratch.size());
 
@@ -460,11 +448,10 @@ namespace winrt::Wavely::Backend::implementation
                 lastEmit = now;
             }
 
-            if (now - lastDeviceCheck >= kDeviceReevaluationInterval)
+            if (now - lastTargetCheck >= kTargetReevaluationInterval)
             {
-                lastDeviceCheck = now;
-                const auto bestDevice = findBestRenderDevice(enumerator);
-                if (getDeviceId(bestDevice.get()) != currentDeviceId)
+                lastTargetCheck = now;
+                if (findWhitelistedActiveProcessId(enumerator) != processId)
                 {
                     audioClient->Stop();
                     return;

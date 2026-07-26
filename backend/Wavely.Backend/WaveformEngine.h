@@ -10,19 +10,20 @@
 
 namespace winrt::Wavely::Backend::implementation
 {
-    /// Captures a live audio render device's output via WASAPI loopback on a dedicated thread
-    /// and republishes it as kBandCount log-spaced frequency-domain magnitude bands (a real
-    /// equalizer-style spectrum - not a time-domain amplitude history - per explicit product
+    /// Captures a whitelisted native music-streaming app's audio output (see
+    /// Core/MusicAppAllowlist.h) via Windows' per-process WASAPI loopback capture on a dedicated
+    /// thread and republishes it as kBandCount log-spaced frequency-domain magnitude bands (a
+    /// real equalizer-style spectrum - not a time-domain amplitude history - per explicit product
     /// direction: each band reflects the *current* instant's bass/mid/treble energy, so bars
     /// move somewhat independently rather than "scrolling" like a timeline).
     ///
-    /// Not fixed to the system default render device: apps commonly get individually redirected
-    /// to a different output (Elgato Wave Link, VoiceMeeter, and similar routing/streaming
-    /// software are common on the kind of machine that runs a media-widget app at all), which
-    /// would otherwise make the waveform stay flat while music audibly plays. Every device is
-    /// checked for an actively-rendering audio session (the same signal Volume Mixer's animated
-    /// icon uses) and capture follows whichever one is actually busy, re-evaluated periodically.
-    /// See docs/ADR-003-waveform-device-selection.md.
+    /// Captures the target process's audio directly rather than a render device's mixed output:
+    /// this both (a) restricts the waveform to just the whitelisted music app instead of
+    /// reflecting whatever else happens to also be making noise (games, notifications, browser
+    /// tabs, ...), and (b) captures "pre-routing" - before Elgato Wave Link/VoiceMeeter/similar
+    /// per-app audio routing touches it - which sidesteps ADR-003's finding that some routed
+    /// virtual devices hand back all-zero loopback samples even though the session is genuinely
+    /// active. See docs/ADR-004-per-process-loopback-capture.md.
     struct WaveformEngine : WaveformEngineT<WaveformEngine>
     {
         WaveformEngine() = default;
@@ -35,7 +36,7 @@ namespace winrt::Wavely::Backend::implementation
 
     private:
         void captureThreadProc();
-        void runCaptureSession(IMMDeviceEnumerator* enumerator, IMMDevice* device);
+        void runProcessCaptureSession(IMMDeviceEnumerator* enumerator, DWORD processId);
         void emitBands();
 
         static constexpr std::size_t kBandCount = 20;

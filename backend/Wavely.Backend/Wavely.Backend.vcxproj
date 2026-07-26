@@ -86,6 +86,9 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ModuleDefinitionFile>Wavely.Backend.def</ModuleDefinitionFile>
+      <!-- Mmdevapi.lib: ActivateAudioInterfaceAsync (WaveformEngine's per-process loopback
+           capture) isn't part of the default link library set, unlike CoCreateInstance/ole32. -->
+      <AdditionalDependencies>Mmdevapi.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Link Condition="'$(Configuration)'=='Release'">
       <EnableCOMDATFolding>true</EnableCOMDATFolding>

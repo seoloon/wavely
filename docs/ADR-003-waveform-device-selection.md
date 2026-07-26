@@ -1,7 +1,12 @@
 # ADR-003 — WaveformEngine ne se fixe pas sur le périphérique de rendu par défaut
 
 ## Statut
-Acceptée (2026-07-26)
+Acceptée (2026-07-26). **Superseded pour la stratégie de capture elle-même par
+[ADR-004](ADR-004-music-app-whitelist-and-process-loopback.md)** : la capture
+par périphérique décrite ci-dessous a été entièrement remplacée par une
+capture par processus, qui élimine le point 3 ci-dessous. Ce document reste
+la référence pour le diagnostic original (le point 2 - session active ≠
+données réelles - reste directement pertinent et est réutilisé par ADR-004).
 
 ## Contexte
 `claude/PLAN.md` (5.1) et `claude/PROMPT.md` décrivent la capture waveform comme
