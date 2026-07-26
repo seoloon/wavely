@@ -6,14 +6,14 @@
 
 **Architecture:** Pure-logic color resolution (`Services/DynamicColorService.cs`) feeds a small set of `Apply*` methods on `MainWindow` (moved into a new `MainWindow.Appearance.cs` partial-class file to keep the file under RULES.md's ~200-line guidance) that mutate existing Avalonia controls' brushes/effects/clips/transforms. No new WinRT surface — everything consumes `TrackInfo.DominantColors` and the `AppConfig` toggles that already exist and are already wired to the Settings UI.
 
-**Tech Stack:** C#/.NET 8, Avalonia 11.3.18 (`Avalonia.Media.Effects.BlurEffect`/`DropShadowEffect`, `Avalonia.Media.StreamGeometry`/`EllipseGeometry`, `Avalonia.Media.RotateTransform`), `Avalonia.Threading.DispatcherTimer`.
+**Tech Stack:** C#/.NET 8, Avalonia 11.3.18 (`Avalonia.Media.BlurEffect`/`DropShadowDirectionEffect` — verified there is no `Avalonia.Media.Effects` sub-namespace in this version, and no plain `DropShadowEffect`; see Task 4's and Task 5's amendments — `Avalonia.Media.StreamGeometry`/`EllipseGeometry`, `Avalonia.Media.RotateTransform`), `Avalonia.Threading.DispatcherTimer`.
 
 ## Global Constraints
 
 - Frontend nullable reference types enabled (`<Nullable>enable</Nullable>`); no `catch {}` empty blocks (RULES.md §4).
 - PascalCase types/methods/properties, `camelCase` locals, `_camelCase` private fields (RULES.md §3).
 - No magic numbers — every tuning value is a named `const`/`static readonly` (RULES.md §3).
-- Visual effects (blur, glow) must be GPU-accelerated (Avalonia's Skia-backed `Effects`), never a software fallback (RULES.md §2) — this plan only uses Avalonia's built-in `BlurEffect`/`DropShadowEffect`, never a custom shader.
+- Visual effects (blur, glow) must be GPU-accelerated (Avalonia's Skia-backed effects), never a software fallback (RULES.md §2) — this plan only uses Avalonia's built-in `BlurEffect`/`DropShadowDirectionEffect`, never a custom shader.
 - Classes should not exceed ~200 lines (RULES.md §3) — `MainWindow.axaml.cs` is already at 351 lines before this phase; Task 3 splits appearance-related methods into a new `MainWindow.Appearance.cs` partial-class file rather than growing the existing one further.
 - **No automated test project exists anywhere in this repo** (checked: zero `*.Tests` projects across all 5 shipped phases). Every prior phase's `PLAN.md` status note describes verification as *"vérifié par interaction réelle"* — building, running `Wavely.App.exe` against a real GSMTC session, and confirming behavior visually (screenshots) — not unit tests. This plan follows that established practice: each task's verification step is "build, run, observe," not "write a failing unit test." A unit-testable core (`DynamicColorService`, `SquircleGeometry`) is still isolated into its own file even without a test harness, so one could be added later without touching UI code.
 - Build: `.\build.ps1 -Configuration Debug` from the repo root (builds backend via MSBuild, then frontend via `dotnet build`). Backend is unchanged in this plan (6.1 already committed) — only the frontend half needs rebuilding per task, but running the full script is harmless and simplest.
@@ -539,10 +539,14 @@ Add this constant near the top of the class and the method anywhere among the ot
 
 - [ ] **Step 3: Wire it up in `MainWindow.axaml.cs`**
 
+**⚠️ Amendment (found by Task 4's implementer, confirmed by a successful build):** there is no
+`Avalonia.Media.Effects` namespace in this project's Avalonia 11.3.18 — `BlurEffect` lives
+directly under `Avalonia.Media`.
+
 In `OnOpened`, set the blur effect once and apply the initial state - add after `ApplyAppearance();`:
 
 ```csharp
-        BlurBackgroundImage.Effect = new Avalonia.Media.Effects.BlurEffect { Radius = BackgroundBlurRadius };
+        BlurBackgroundImage.Effect = new Avalonia.Media.BlurEffect { Radius = BackgroundBlurRadius };
         ApplyBlurBackground();
 ```
 
@@ -590,6 +594,17 @@ git commit -m "feat: add blurred cover background (Phase 6.3)"
 
 ### Task 5: Glow
 
+**⚠️ Amendment (post-Task-4, verified by the controller before dispatch):** the original text
+below assumed `Avalonia.Media.Effects.BlurEffect`/`DropShadowEffect` (an `Effects` sub-namespace,
+and a WPF-style `OffsetX`/`OffsetY` drop shadow). Task 4 found — and the controller independently
+re-verified via a throwaway build probe — that Avalonia 11.3.18 has **no `Avalonia.Media.Effects`
+namespace at all**: `BlurEffect` lives directly under `Avalonia.Media`, and there is no plain
+`DropShadowEffect` type either — only `Avalonia.Media.DropShadowDirectionEffect`, whose XML docs
+say it's "compatible with WPF's DropShadowEffect" but exposes **`Direction` (degrees) and
+`ShadowDepth` (double) instead of `OffsetX`/`OffsetY`**. Verified compiling with `Color`,
+`BlurRadius`, `Direction`, `ShadowDepth`, `Opacity` all present. The code below uses the corrected
+type/properties; a symmetric halo (no directional offset) is `Direction = 0.0, ShadowDepth = 0.0`.
+
 **Files:**
 - Modify: `frontend/Wavely.App/Views/MainWindow.Appearance.cs` — add `ApplyGlow`, call it from `ApplyDynamicColors`.
 
@@ -618,16 +633,18 @@ Add near `BackgroundBlurRadius`:
             return;
         }
 
-        CoverBorder.Effect = new Avalonia.Media.Effects.DropShadowEffect
+        CoverBorder.Effect = new DropShadowDirectionEffect
         {
             Color = glowColor,
             BlurRadius = GlowBlurRadius,
-            OffsetX = 0,
-            OffsetY = 0,
+            Direction = 0.0,
+            ShadowDepth = 0.0,
             Opacity = GlowOpacity,
         };
     }
 ```
+
+(`DropShadowDirectionEffect` resolves via the file's existing `using Avalonia.Media;`.)
 
 - [ ] **Step 2: Call it from `ApplyDynamicColors`**
 
