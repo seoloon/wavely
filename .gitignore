@@ -27,3 +27,6 @@ CMakeLists.txt.user*
 # Windows
 Thumbs.db
 desktop.ini
+
+# Superpowers subagent-driven-development scratch workspace (ledgers, briefs, review packages)
+.superpowers/
