@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:controls="using:Wavely.App.Controls"
         x:Class="Wavely.App.Views.MainWindow"
         Title="Wavely"
         SystemDecorations="None"
@@ -9,7 +10,7 @@
         CanResize="False"
         ShowInTaskbar="False"
         Topmost="True"
-        Width="360" Height="120">
+        Width="360" Height="156">
     <Window.Transitions>
         <Transitions>
             <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
@@ -19,15 +20,18 @@
         <Border.Background>
             <SolidColorBrush Color="#141418" Opacity="0.7" />
         </Border.Background>
-        <Grid ColumnDefinitions="Auto,*">
-            <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
-                <Image x:Name="CoverImage" Stretch="UniformToFill" />
-            </Border>
-            <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
-                <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />
-                <TextBlock x:Name="ArtistText" Foreground="#B4FFFFFF" />
-                <TextBlock x:Name="StatusText" Foreground="#78FFFFFF" FontSize="10" />
-            </StackPanel>
-        </Grid>
+        <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="Auto,*">
+                <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
+                    <Image x:Name="CoverImage" Stretch="UniformToFill" />
+                </Border>
+                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
+                    <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />
+                    <TextBlock x:Name="ArtistText" Foreground="#B4FFFFFF" />
+                    <TextBlock x:Name="StatusText" Foreground="#78FFFFFF" FontSize="10" />
+                </StackPanel>
+            </Grid>
+            <controls:WaveformControl x:Name="Waveform" Height="28" />
+        </StackPanel>
     </Border>
 </Window>

@@ -126,6 +126,14 @@ Test : Thème sombre/clair → changement immédiat
 ## PHASE 5 — Waveform Dynamique WASAPI (Session 7-8)
 > *Durée : 2 sessions | Objectif : La waveform réagit à l'audio en temps réel*
 
+> **Statut (2026-07-26) : livrée et vérifiée en conditions réelles, avec un écart volontaire par rapport au tableau ci-dessous** (décidé en session, pas juste "présumé fonctionner") :
+> - **5.1** livré : `Wavely.Backend.WaveformEngine`, capture WASAPI loopback sur thread dédié, ring buffer SPSC lock-free (`Core/RingBuffer.h`). **Ne se limite pas au périphérique par défaut** — un premier test réel (son système audible, waveform plate) a révélé que sur une machine avec routage audio par app (Elgato Wave Link), le périphérique par défaut n'est pas forcément celui utilisé par l'app dont on veut voir la waveform, et qu'un périphérique peut avoir une session "active" tout en renvoyant des buffers loopback à zéro. Voir `docs/ADR-003-waveform-device-selection.md` pour le diagnostic complet et la logique de sélection (session active + sonde de données réelles, réévaluée toutes les 2s).
+> - **5.2** livré, **avec vraie FFT** (pas juste RMS) : radix-2 Cooley-Tukey maison (`std::complex<float>`, fenêtre de Hann), sur la demande explicite de l'utilisateur après un premier rendu jugé trop "timeline" plutôt que "EQ". 20 bandes (pas 60) log-espacées, concentrées sur la plage perceptuellement utile ~40Hz-16kHz (pas 0-Nyquist) pour donner plus de résolution/mouvement aux aigus — également une demande explicite en session, pas une valeur par défaut arbitraire.
+> - **5.3** livré : thread dédié, `WaveformDataReady` (toutes les 16ms) avec les bandes packées en `IBuffer` (même pattern déjà vérifié pour la cover art), consommé côté C# via `MemoryMarshal.Cast<byte, float>`.
+> - **5.4** livré, **style différent du tableau** : pas de "courbe lissée", des barres façon égaliseur centrées verticalement (croissance symétrique haut/bas depuis le centre), reprenant le look de `assets/presets_reference/EqualizerBars.svelte` — demande explicite en session après un premier rendu (barres alignées en bas, façon timeline) jugé inadapté.
+> - **5.5 non fait** : aucun système de presets n'existe encore (Phase 7), donc pas de notion de "preset compatible" à brancher. Le waveform s'affiche inconditionnellement dans `MainWindow` pour l'instant.
+> - Vérifié par captures d'écran répétées avec du vrai audio (sons système via `SoundPlayer`, vidéos/musique via navigateur) : les barres réagissent en direct, des bandes différentes s'allument différemment selon le contenu (graves vs aigus, preuve d'une vraie analyse fréquentielle et non d'un pouls uniforme), et reviennent à l'état de repos au silence. **Non mesuré** : l'utilisation CPU précise (checkpoint "< 2%/< 5%" ci-dessous non chiffré formellement).
+
 ### Session 7 — Capture Audio (backend)
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|

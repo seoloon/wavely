@@ -8,6 +8,7 @@ using Avalonia.Input;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Wavely.Backend;
+using Windows.Storage.Streams;
 
 namespace Wavely.App.Views;
 
@@ -19,8 +20,9 @@ namespace Wavely.App.Views;
 public partial class MainWindow : Window
 {
     private const double DefaultWidth = 360;
-    private const double DefaultHeight = 120;
+    private const double DefaultHeight = 156;
     private const double CoverSize = 88;
+    private const double WaveformHeight = 28;
     private const double ScaleStep = 0.1;
     private const int HandleMargin = 4;
 
@@ -33,6 +35,7 @@ public partial class MainWindow : Window
 
     private readonly AppConfig _config;
     private readonly MediaSessionManager _sessionManager;
+    private readonly WaveformEngine _waveformEngine;
     private readonly DispatcherTimer _hideTimer;
     private readonly DispatcherTimer _hideAfterFadeTimer;
     private readonly ClickThroughHandle _clickThroughHandle = new();
@@ -40,12 +43,13 @@ public partial class MainWindow : Window
     private IntPtr _hwnd;
     private bool _hiddenByAutoHide;
 
-    public MainWindow(AppConfig config, MediaSessionManager sessionManager)
+    public MainWindow(AppConfig config, MediaSessionManager sessionManager, WaveformEngine waveformEngine)
     {
         InitializeComponent();
 
         _config = config;
         _sessionManager = sessionManager;
+        _waveformEngine = waveformEngine;
 
         _hideTimer = new DispatcherTimer
         {
@@ -70,6 +74,7 @@ public partial class MainWindow : Window
 
         _sessionManager.TrackChanged += OnTrackChanged;
         _sessionManager.PlaybackStateChanged += OnPlaybackStateChanged;
+        _waveformEngine.WaveformDataReady += OnWaveformDataReady;
 
         Opened += OnOpened;
         Closing += OnClosing;
@@ -161,6 +166,7 @@ public partial class MainWindow : Window
         Height = DefaultHeight * scale;
         CoverBorder.Width = CoverSize * scale;
         CoverBorder.Height = CoverSize * scale;
+        Waveform.Height = WaveformHeight * scale;
     }
 
     /// <summary>Re-applies state that the Settings window may have changed on the shared
@@ -305,6 +311,12 @@ public partial class MainWindow : Window
                 _hideTimer.Start();
             }
         });
+    }
+
+    private void OnWaveformDataReady(WaveformEngine sender, IBuffer bands)
+    {
+        var floats = MemoryMarshal.Cast<byte, float>(bands.ToArray()).ToArray();
+        Dispatcher.UIThread.Post(() => Waveform.UpdateBands(floats));
     }
 
     [DllImport("user32.dll")]

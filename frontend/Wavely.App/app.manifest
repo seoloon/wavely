@@ -30,5 +30,6 @@
     <activatableClass name="Wavely.Backend.AutoStartManager" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
     <activatableClass name="Wavely.Backend.TrackInfo" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
     <activatableClass name="Wavely.Backend.MediaSessionManager" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass name="Wavely.Backend.WaveformEngine" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
   </file>
 </assembly>

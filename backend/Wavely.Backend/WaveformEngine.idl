@@ -1,0 +1,16 @@
+namespace Wavely.Backend
+{
+    [default_interface]
+    runtimeclass WaveformEngine
+    {
+        WaveformEngine();
+
+        void Start();
+        void Stop();
+
+        // 60 normalized [0.0, 1.0] RMS amplitude bands, packed as 32-bit floats in an IBuffer
+        // (RULES.md: no redundant copy of volumetric buffers across the WinRT boundary - same
+        // approach already used for cover art). Emitted at ~60fps while Start()'d.
+        event Windows.Foundation.TypedEventHandler<WaveformEngine, Windows.Storage.Streams.IBuffer> WaveformDataReady;
+    }
+}

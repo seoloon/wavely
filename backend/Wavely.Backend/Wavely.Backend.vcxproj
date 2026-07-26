@@ -103,6 +103,7 @@
     <Midl Include="AutoStartManager.idl" />
     <Midl Include="TrackInfo.idl" />
     <Midl Include="MediaSessionManager.idl" />
+    <Midl Include="WaveformEngine.idl" />
   </ItemGroup>
 
   <ItemGroup>
@@ -126,10 +127,13 @@
     <ClCompile Include="TrackInfo.cpp" Condition="Exists('TrackInfo.cpp')" />
     <ClInclude Include="MediaSessionManager.h" Condition="Exists('MediaSessionManager.h')" />
     <ClCompile Include="MediaSessionManager.cpp" Condition="Exists('MediaSessionManager.cpp')" />
+    <ClInclude Include="WaveformEngine.h" Condition="Exists('WaveformEngine.h')" />
+    <ClCompile Include="WaveformEngine.cpp" Condition="Exists('WaveformEngine.cpp')" />
     <ClInclude Include="Core\Handle.h" />
     <ClInclude Include="Core\ComPtr.h" />
     <ClInclude Include="Core\WinrtGuard.h" />
     <ClInclude Include="Core\RegistryKey.h" />
+    <ClInclude Include="Core\RingBuffer.h" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" Condition="Exists('$(GeneratedFilesDir)module.g.cpp')" />
   </ItemGroup>
 

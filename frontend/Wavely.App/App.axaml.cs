@@ -13,6 +13,7 @@ public partial class App : Application
 {
     private AppTrayIcon? _trayIcon;
     private MediaSessionManager? _sessionManager;
+    private WaveformEngine? _waveformEngine;
     private AppConfig? _config;
     private MainWindow? _mainWindow;
     private SettingsWindow? _settingsWindow;
@@ -33,17 +34,20 @@ public partial class App : Application
 
             _config = new AppConfig();
             _sessionManager = new MediaSessionManager();
+            _waveformEngine = new WaveformEngine();
 
-            _mainWindow = new MainWindow(_config, _sessionManager);
+            _mainWindow = new MainWindow(_config, _sessionManager, _waveformEngine);
             desktop.MainWindow = _mainWindow;
 
             _trayIcon = new AppTrayIcon(_mainWindow, _config, _sessionManager, OpenSettings);
 
             _sessionManager.Start();
+            _waveformEngine.Start();
 
             desktop.ShutdownRequested += (_, _) =>
             {
                 _sessionManager.Stop();
+                _waveformEngine.Stop();
                 _trayIcon.Dispose();
             };
         }
