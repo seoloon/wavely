@@ -14,6 +14,8 @@ namespace Wavely.App.Views;
 public partial class MainWindow
 {
     private const double BackgroundBlurRadius = 24.0;
+    private const double GlowBlurRadius = 18.0;
+    private const double GlowOpacity = 0.9;
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
@@ -58,6 +60,8 @@ public partial class MainWindow
         TitleText.Foreground = textIsDark ? DarkTitleForeground : LightTitleForeground;
         ArtistText.Foreground = textIsDark ? DarkArtistForeground : LightArtistForeground;
         StatusText.Foreground = textIsDark ? DarkStatusForeground : LightStatusForeground;
+
+        ApplyGlow(_config.DynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow);
     }
 
     /// <summary>Shows a heavily blurred copy of the current cover art behind the widget's
@@ -68,5 +72,26 @@ public partial class MainWindow
     {
         BlurBackgroundImage.Source = CoverImage.Source;
         BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && CoverImage.Source is not null;
+    }
+
+    /// <summary>Applies (or clears) a colored halo around the cover. Color follows the dynamic
+    /// palette when enabled, otherwise a neutral white glow - independent of whether dynamic
+    /// colors are on, the glow's presence is controlled only by CoverGlowEnabled.</summary>
+    private void ApplyGlow(Color glowColor)
+    {
+        if (!_config.CoverGlowEnabled)
+        {
+            CoverBorder.Effect = null;
+            return;
+        }
+
+        CoverBorder.Effect = new DropShadowDirectionEffect
+        {
+            Color = glowColor,
+            BlurRadius = GlowBlurRadius,
+            Direction = 0.0,
+            ShadowDepth = 0.0,
+            Opacity = GlowOpacity,
+        };
     }
 }
