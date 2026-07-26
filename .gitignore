@@ -1,0 +1,18 @@
+# Build output
+/build/
+/out/
+
+# CMake user overrides (machine-specific CMAKE_PREFIX_PATH, etc.)
+CMakeUserPresets.json
+
+# Visual Studio / VS Code
+.vs/
+*.user
+.vscode/
+
+# Qt Creator
+CMakeLists.txt.user*
+
+# Windows
+Thumbs.db
+desktop.ini
