@@ -240,18 +240,41 @@ git commit -m "feat: make WaveformControl bar color configurable via AccentColor
 
 ---
 
-### Task 3: Dynamic color binding (background, waveform accent, text)
+### Task 3: Dynamic color binding (background, waveform accent, text) — ✅ implemented, plan amended below
 
-**Files:**
-- Modify: `frontend/Wavely.App/Views/MainWindow.axaml` — name the background brush.
-- Create: `frontend/Wavely.App/Views/MainWindow.Appearance.cs`
-- Modify: `frontend/Wavely.App/Views/MainWindow.axaml.cs` — remove `ApplyAppearance` (moved), add `_currentTrack` field and call sites.
+**⚠️ Amendment (post-implementation, verified by the controller):** Step 1 as originally written
+below asked to name the background `SolidColorBrush` with `x:Name="BackgroundBrush"` and access it
+as a generated C# field. **This does not compile in this project** — this project's Avalonia XAML
+codegen only emits backing fields for `Control`-derived named elements (`Border`, `TextBlock`,
+`Image`, custom controls), not a `SolidColorBrush` nested inside a property element like
+`<Border.Background>`. Verified directly (not just taken on the implementer's word): adding
+`x:Name="TestNamedBrushProbe"` to the brush and referencing it from code produced
+`CS0103: the name 'TestNamedBrushProbe' does not exist in the current context` on build; reverted
+after confirming.
+
+**What was actually implemented instead:** `MainWindow.axaml`'s background brush stays **unnamed**
+(no diff from `main` at all). Both `ApplyAppearance()` and `ApplyDynamicColors()` access it via the
+pre-existing cast pattern the original `ApplyAppearance` already used:
+`if (BackgroundBorder.Background is SolidColorBrush backgroundBrush) { ... }` — `BackgroundBorder`
+*is* a named `Border` (a `Control`), so it does get a generated field; the brush hanging off its
+`.Background` property is reached through that field instead of its own name. Behavior is
+identical; only the access path differs.
+
+**This means:** any later task in this plan that assumed a `BackgroundBrush` named field exists
+must instead use this same `BackgroundBorder.Background is SolidColorBrush` cast. Task 4's
+original text (below) still shows the old `x:Name="BackgroundBrush"` assumption in its "before"
+snippets — the amendment inside Task 4 corrects this.
+
+**Files (as actually touched):**
+- `frontend/Wavely.App/Views/MainWindow.axaml` — **unchanged** (no net diff; the naming attempt was reverted).
+- Created: `frontend/Wavely.App/Views/MainWindow.Appearance.cs`
+- Modified: `frontend/Wavely.App/Views/MainWindow.axaml.cs` — removed `ApplyAppearance` (moved), added `_currentTrack` field and call sites.
 
 **Interfaces:**
 - Consumes: `DynamicColorService.Resolve(TrackInfo)`, `WidgetColorScheme`, `WaveformControl.AccentColor` (Tasks 1-2).
-- Produces: `MainWindow.ApplyDynamicColors(TrackInfo track)` — Task 5 extends this to also apply glow; `MainWindow._currentTrack` (`TrackInfo?`) — Task 4 reads this too.
+- Produces: `MainWindow.ApplyDynamicColors(TrackInfo track)` — Task 5 extends this to also apply glow; `MainWindow._currentTrack` (`TrackInfo?`) — Task 4 reads this too. `BackgroundBorder.Background is SolidColorBrush` is the established access pattern for the background brush — there is no `BackgroundBrush` field.
 
-- [ ] **Step 1: Name the background brush**
+- [ ] **Step 1 (original text, superseded by the amendment above — kept for history): Name the background brush**
 
 In `MainWindow.axaml`, change:
 
@@ -269,6 +292,8 @@ to:
         </Border.Background>
 ```
 
+**This step was not applied — see the amendment above. `MainWindow.axaml` has no changes from this task.**
+
 - [ ] **Step 2: Create the appearance partial-class file**
 
 Create `frontend/Wavely.App/Views/MainWindow.Appearance.cs`:
@@ -277,6 +302,7 @@ Create `frontend/Wavely.App/Views/MainWindow.Appearance.cs`:
 using Avalonia;
 using Avalonia.Media;
 using Wavely.App.Services;
+using Wavely.Backend;
 
 namespace Wavely.App.Views;
 
@@ -300,7 +326,10 @@ public partial class MainWindow
     /// Opacity, so text/icons stay fully readable) and the app-wide dark/light theme variant.</summary>
     private void ApplyAppearance()
     {
-        BackgroundBrush.Opacity = _config.BackgroundOpacity;
+        if (BackgroundBorder.Background is SolidColorBrush backgroundBrush)
+        {
+            backgroundBrush.Opacity = _config.BackgroundOpacity;
+        }
 
         if (Application.Current is { } app)
         {
@@ -317,7 +346,11 @@ public partial class MainWindow
     {
         var scheme = DynamicColorService.Resolve(track);
 
-        BackgroundBrush.Color = _config.DynamicBackgroundEnabled ? scheme.Background : WidgetColorScheme.Default.Background;
+        if (BackgroundBorder.Background is SolidColorBrush backgroundBrush)
+        {
+            backgroundBrush.Color = _config.DynamicBackgroundEnabled ? scheme.Background : WidgetColorScheme.Default.Background;
+        }
+
         Waveform.AccentColor = _config.DynamicColorsEnabled ? scheme.Accent : WidgetColorScheme.Default.Accent;
 
         var textIsDark = _config.DynamicColorsEnabled && scheme.TextIsDark;
@@ -328,18 +361,7 @@ public partial class MainWindow
 }
 ```
 
-(`TrackInfo` resolves to `Wavely.Backend.TrackInfo` via the existing `using Wavely.Backend;` in `MainWindow.axaml.cs` - partial classes share usings only within the same file, so add `using Wavely.Backend;` to this new file's using list too if the compiler flags it unresolved.)
-
-Re-check: add `using Wavely.Backend;` to the top of `MainWindow.Appearance.cs` (each file in a partial class needs its own usings):
-
-```csharp
-using Avalonia;
-using Avalonia.Media;
-using Wavely.App.Services;
-using Wavely.Backend;
-
-namespace Wavely.App.Views;
-```
+(Partial classes share fields and named XAML elements across files, but each file needs its own `using` directives — the code block above already includes `using Wavely.Backend;` for `TrackInfo`.)
 
 - [ ] **Step 3: Remove `ApplyAppearance` from `MainWindow.axaml.cs` and wire the new call sites**
 
@@ -450,12 +472,14 @@ git commit -m "feat: bind dynamic cover colors to widget background, waveform, a
 
 - [ ] **Step 1: Restructure the XAML to add a blurred background layer**
 
+**Note (per Task 3's amendment above): the background brush is unnamed** (naming it doesn't compile in this project) — keep it unnamed here too; every task accesses it via `BackgroundBorder.Background is SolidColorBrush`, never a `BackgroundBrush` field.
+
 In `MainWindow.axaml`, replace:
 
 ```xml
     <Border x:Name="BackgroundBorder" CornerRadius="16" Padding="16">
         <Border.Background>
-            <SolidColorBrush x:Name="BackgroundBrush" Color="#141418" Opacity="0.7" />
+            <SolidColorBrush Color="#141418" Opacity="0.7" />
         </Border.Background>
         <StackPanel Spacing="8">
 ```
@@ -468,7 +492,7 @@ with:
             <Image x:Name="BlurBackgroundImage" Stretch="UniformToFill" IsVisible="False" />
             <Border Padding="16">
                 <Border.Background>
-                    <SolidColorBrush x:Name="BackgroundBrush" Color="#141418" Opacity="0.7" />
+                    <SolidColorBrush Color="#141418" Opacity="0.7" />
                 </Border.Background>
                 <StackPanel Spacing="8">
 ```
