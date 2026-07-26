@@ -1,0 +1,57 @@
+#pragma once
+#include "MediaSessionManager.g.h"
+#include "TrackInfo.h"
+
+#include <atomic>
+
+namespace winrt::Wavely::Backend::implementation
+{
+    /// Observes the system-wide GSMTC session (Spotify, YouTube Music, Deezer, ...) and
+    /// republishes playback state, metadata and cover art as WinRT events consumed by the
+    /// frontend. Callbacks guard against the object having been Stop()'d mid-flight (RULES.md
+    /// SS4: the frontend can disconnect at any time).
+    struct MediaSessionManager : MediaSessionManagerT<MediaSessionManager>
+    {
+        MediaSessionManager() = default;
+
+        void Start();
+        void Stop();
+        void Refresh();
+        winrt::Wavely::Backend::TrackInfo CurrentTrack();
+
+        winrt::event_token TrackChanged(winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Wavely::Backend::TrackInfo> const& handler);
+        void TrackChanged(winrt::event_token const& token) noexcept;
+        winrt::event_token PlaybackStateChanged(winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, bool> const& handler);
+        void PlaybackStateChanged(winrt::event_token const& token) noexcept;
+        winrt::event_token CoverArtReceived(winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Windows::Storage::Streams::IBuffer> const& handler);
+        void CoverArtReceived(winrt::event_token const& token) noexcept;
+
+    private:
+        winrt::fire_and_forget initializeAsync();
+        void onSessionsChanged();
+        void subscribeToCurrentSession();
+        void unsubscribeFromCurrentSession();
+        void refreshPlaybackInfo();
+        winrt::fire_and_forget refreshMediaPropertiesAsync();
+
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager m_sessionManager{ nullptr };
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession m_currentSession{ nullptr };
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::SessionsChanged_revoker m_sessionsChangedRevoker;
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession::MediaPropertiesChanged_revoker m_mediaPropertiesChangedRevoker;
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession::PlaybackInfoChanged_revoker m_playbackInfoChangedRevoker;
+
+        winrt::Wavely::Backend::TrackInfo m_currentTrack{ winrt::make<TrackInfo>() };
+        std::atomic<bool> m_started{ false };
+        std::atomic<bool> m_stopped{ false };
+
+        winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Wavely::Backend::TrackInfo>> m_trackChangedEvent;
+        winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, bool>> m_playbackStateChangedEvent;
+        winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Windows::Storage::Streams::IBuffer>> m_coverArtReceivedEvent;
+    };
+}
+namespace winrt::Wavely::Backend::factory_implementation
+{
+    struct MediaSessionManager : MediaSessionManagerT<MediaSessionManager, implementation::MediaSessionManager>
+    {
+    };
+}

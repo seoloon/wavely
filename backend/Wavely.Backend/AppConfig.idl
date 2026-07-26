@@ -1,0 +1,39 @@
+namespace Wavely.Backend
+{
+    enum ThemeMode
+    {
+        Dark,
+        Light,
+    };
+
+    struct WidgetGeometry
+    {
+        Int32 PositionX;
+        Int32 PositionY;
+        Double Scale;
+    };
+
+    [default_interface]
+    runtimeclass AppConfig
+    {
+        AppConfig();
+
+        WidgetGeometry Geometry{ get; };
+        Boolean Locked{ get; };
+        Boolean ClickThroughEnabled{ get; };
+        Boolean HideOnPauseEnabled{ get; };
+        Int32 HideOnPauseDelaySeconds{ get; };
+        Boolean LaunchAtStartup{ get; };
+        ThemeMode Theme{ get; };
+        String LanguageCode{ get; };
+
+        void SetGeometry(WidgetGeometry geometry);
+        void SetLocked(Boolean locked);
+        void SetClickThroughEnabled(Boolean enabled);
+        void SetHideOnPauseEnabled(Boolean enabled);
+        void SetHideOnPauseDelaySeconds(Int32 seconds);
+        void SetLaunchAtStartup(Boolean enabled);
+        void SetTheme(ThemeMode theme);
+        void SetLanguageCode(String languageCode);
+    }
+}

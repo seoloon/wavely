@@ -1,6 +1,17 @@
 # Build output
 /build/
 /out/
+backend/**/build/
+frontend/**/bin/
+frontend/**/obj/
+
+# Vendored NuGet packages (restored via backend/restore-packages.ps1, see docs/TECHNICAL.md)
+backend/packages/
+*.nupkg
+
+# Stray classic-MIDL header MSBuild writes next to the .idl despite HeaderFileName=nul
+# (the real WinRT projection headers live under build/.../Generated Files/)
+backend/**/*_h.h
 
 # CMake user overrides (machine-specific CMAKE_PREFIX_PATH, etc.)
 CMakeUserPresets.json

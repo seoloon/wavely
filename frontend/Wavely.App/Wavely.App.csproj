@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <RootNamespace>Wavely.App</RootNamespace>
+    <AssemblyName>Wavely.App</AssemblyName>
+    <Platforms>x64</Platforms>
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.18" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.18" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.18" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.18" />
+    <PackageReference Include="Microsoft.Windows.CsWinRT" Version="2.3.1" />
+  </ItemGroup>
+
+  <!-- Generates the C# projection for our backend's Wavely.Backend namespace from the
+       .winmd produced by the sibling C++/WinRT project (see docs/ADR-002).
+
+       This is a raw <CsWinRTInputs> file, not a <ProjectReference> to the .vcxproj (the two
+       MSBuild toolchains on this machine can't build each other's project type - see
+       docs/TECHNICAL.md) and not a plain <Reference><HintPath> either: ResolveAssemblyReferences
+       cannot read a native-component .winmd's metadata ("PE image does not have metadata") and
+       silently drops every other reference along with it. <CsWinRTInputs> is CsWinRT's own,
+       documented entry point for a raw external winmd, bypassing RAR entirely. -->
+  <PropertyGroup>
+    <CsWinRTIncludes>Wavely.Backend</CsWinRTIncludes>
+    <CsWinRTWindowsMetadata>sdk</CsWinRTWindowsMetadata>
+    <WavelyBackendOutDir>..\..\backend\Wavely.Backend\build\bin\$(Configuration)\</WavelyBackendOutDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <CsWinRTInputs Include="$(WavelyBackendOutDir)Wavely.Backend.winmd">
+      <Implementation>Wavely.Backend.dll</Implementation>
+    </CsWinRTInputs>
+    <None Include="$(WavelyBackendOutDir)Wavely.Backend.dll">
+      <Link>Wavely.Backend.dll</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <Target Name="EnsureWavelyBackendBuilt" BeforeTargets="BeforeBuild">
+    <Error
+      Condition="!Exists('$(WavelyBackendOutDir)Wavely.Backend.winmd')"
+      Text="backend\Wavely.Backend is not built for $(Configuration). Run build.ps1, or build backend\Wavely.Backend\Wavely.Backend.vcxproj with Visual Studio's MSBuild first (see docs\TECHNICAL.md)." />
+  </Target>
+
+</Project>

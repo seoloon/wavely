@@ -1,0 +1,9 @@
+namespace Wavely.Backend
+{
+    [default_interface]
+    runtimeclass AutoStartManager
+    {
+        static Boolean IsEnabled();
+        static void SetEnabled(Boolean enabled);
+    }
+}

@@ -1,0 +1,30 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="Wavely.App.Views.MainWindow"
+        Title="Wavely"
+        SystemDecorations="None"
+        Background="Transparent"
+        TransparencyLevelHint="Transparent"
+        WindowStartupLocation="Manual"
+        CanResize="False"
+        ShowInTaskbar="False"
+        Topmost="True"
+        Width="360" Height="120">
+    <Window.Transitions>
+        <Transitions>
+            <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
+        </Transitions>
+    </Window.Transitions>
+    <Border CornerRadius="16" Background="#B4141418" Padding="16">
+        <Grid ColumnDefinitions="Auto,*">
+            <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
+                <Image x:Name="CoverImage" Stretch="UniformToFill" />
+            </Border>
+            <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
+                <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />
+                <TextBlock x:Name="ArtistText" Foreground="#B4FFFFFF" />
+                <TextBlock x:Name="StatusText" Foreground="#78FFFFFF" FontSize="10" />
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

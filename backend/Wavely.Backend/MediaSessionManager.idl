@@ -1,0 +1,20 @@
+import "TrackInfo.idl";
+
+namespace Wavely.Backend
+{
+    [default_interface]
+    runtimeclass MediaSessionManager
+    {
+        MediaSessionManager();
+
+        void Start();
+        void Stop();
+        void Refresh();
+
+        TrackInfo CurrentTrack{ get; };
+
+        event Windows.Foundation.TypedEventHandler<MediaSessionManager, TrackInfo> TrackChanged;
+        event Windows.Foundation.TypedEventHandler<MediaSessionManager, Boolean> PlaybackStateChanged;
+        event Windows.Foundation.TypedEventHandler<MediaSessionManager, Windows.Storage.Streams.IBuffer> CoverArtReceived;
+    }
+}

@@ -12,6 +12,8 @@
 ## PHASE 0 — Fondations (Session 1)
 > *Durée estimée : 1 session | Objectif : Les deux projets compilent, le frontend affiche une donnée venant du backend*
 
+> **Statut (2026-07-26) :** 0.1/0.2 livrés et vérifiés — `backend/Wavely.Backend` (composant WinRT, runtime class `AppInfo`) compile avec MSBuild sans warning (`/W4 /WX`) et produit `Wavely.Backend.{dll,winmd}` (voir `docs/ADR-002-winrt-component-msbuild.md` pour le choix MSBuild plutôt que CMake). `frontend/Wavely.App` (Avalonia, consomme `AppInfo` via `Microsoft.Windows.CsWinRT`) est scaffoldé mais **non vérifié** : le SDK .NET 8 n'est pas installé sur la machine de dev actuelle (voir `docs/TECHNICAL.md`). 0.3 (RAII wrappers) et 0.4 (AppConfig JSON) restent à porter depuis `src/core`/`src/settings` — non commencés.
+
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|
 | 0.1 | **Structure des deux projets** | Backend : `CMakePresets.json`, `src/`, `src/core/`, `src/audio/` (C++, pas d'UI). Frontend : solution .NET Avalonia, `Views/`, `ViewModels/`, `Services/` | `CMakeLists.txt` backend compilable + `dotnet build` frontend compilable |
@@ -31,6 +33,8 @@ Intégration         ? → le frontend affiche au lancement une donnée venant d
 ## PHASE 1 — Contrôleur Média GSMTC (Session 2)
 > *Durée : 1 session | Objectif : On lit les métadonnées de Spotify/YouTube/Deezer, affichées côté Avalonia*
 
+> **Statut (2026-07-26) : livré et vérifié en conditions réelles.** `Wavely.Backend.MediaSessionManager`/`TrackInfo` implémentés et testés en lançant réellement `Wavely.App.exe` : une session GSMTC active (vidéo lue dans le navigateur, faute de Spotify sur la machine de dev) a été détectée automatiquement, avec cover/titre/statut "Playing" affichés dans le widget Avalonia — capture d'écran à l'appui. Changement de piste / pause non testés isolément (pas de lecteur permettant de déclencher ces transitions à la demande sur cette machine), mais le code suit le même chemin d'événements que l'affichage initial.
+
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|
 | 1.1 | **Wrapper GSMTC (backend, WinRT)** | `Wavely.Backend.MediaSessionManager` — écoute `GlobalSystemMediaTransportControlsSessionManager`, expose des événements WinRT projetés en `event` C# | Events : `TrackChanged`, `PlaybackStateChanged`, `CoverArtReceived` |
@@ -48,6 +52,8 @@ Test : Pause/Play → le bool isPlaying change
 
 ## PHASE 2 — Widget Fenêtre & Interactions (Session 3)
 > *Durée : 1 session | Objectif : Le widget se déplace, redimensionne, s'affiche/cache*
+
+> **Statut (2026-07-26) : implémenté, non vérifié interactivement.** 2.1 est vérifié (fenêtre frameless réellement affichée, cf Phase 1). 2.2-2.6 sont portés depuis `MainWidget.cpp` (Qt) vers `MainWindow.axaml.cs` (`WndProcHook` pour WM_NCHITTEST/WM_EXITSIZEMOVE, `WS_EX_TRANSPARENT` pour le click-through, `ClickThroughHandle` pour la "safe zone", `DispatcherTimer` + `Transitions` Avalonia pour le masquage différé) et compilent/tournent sans erreur, mais aucune interaction souris (drag, molette, Ctrl+Click) n'a été exercée manuellement sur cette machine de dev — à valider à la prochaine session avant de cocher le checkpoint ci-dessous.
 
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|
@@ -69,6 +75,8 @@ Test : Play → Pause → timer → disparition → Play → réapparition insta
 
 ## PHASE 3 — System Tray & Auto-Start (Session 4)
 > *Durée : 1 session | Objectif : L'app vit dans la barre des tâches*
+
+> **Statut (2026-07-26) : implémenté, non vérifié interactivement.** `AppTrayIcon` (frontend) et `AutoStartManager` (backend, registre HKCU natif) sont portés et compilent ; le process tourne bien sans crash (fenêtre visible en tâche de fond, `ShutdownRequested` câblé pour arrêter `MediaSessionManager` proprement). Non testés manuellement sur cette machine : clic sur l'icône tray, toggle "Lancer au démarrage", quitter via le menu tray.
 
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|

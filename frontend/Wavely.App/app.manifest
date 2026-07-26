@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<assembly manifestVersion="1.0" xmlns="urn:schemas-microsoft-com:asm.v1">
+  <assemblyIdentity version="1.0.0.0" name="Wavely.App"/>
+  <trustInfo xmlns="urn:schemas-microsoft-com:asm.v2">
+    <security>
+      <requestedPrivileges xmlns="urn:schemas-microsoft-com:asm.v3">
+        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+      </requestedPrivileges>
+    </security>
+  </trustInfo>
+  <compatibility xmlns="urn:schemas-microsoft-com:compatibility.v1">
+    <application>
+      <!-- Windows 10 / 11 -->
+      <supportedOS Id="{8e0f7a12-bfb3-4fe8-b9a5-48fd50a15a9a}" />
+    </application>
+  </compatibility>
+  <application xmlns="urn:schemas-microsoft-com:asm.v3">
+    <windowsSettings>
+      <dpiAware xmlns="http://schemas.microsoft.com/SMI/2005/WindowsSettings">true/PM</dpiAware>
+    </windowsSettings>
+  </application>
+
+  <!-- Registration-free WinRT activation (docs/ADR-002): this app is unpackaged (no MSIX), so
+       the OS can't resolve Wavely.Backend's runtime classes via the registry. Declaring them
+       here lets WinRT.ActivationFactory find them directly in the co-located native DLL instead
+       of failing with REGDB_E_CLASSNOTREG. -->
+  <file name="Wavely.Backend.dll">
+    <activatableClass name="Wavely.Backend.AppInfo" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass name="Wavely.Backend.AppConfig" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass name="Wavely.Backend.AutoStartManager" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass name="Wavely.Backend.TrackInfo" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
+    <activatableClass name="Wavely.Backend.MediaSessionManager" threadingModel="both" xmlns="urn:schemas-microsoft-com:winrt.v1" />
+  </file>
+</assembly>

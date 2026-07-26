@@ -1,0 +1,11 @@
+namespace Wavely.Backend
+{
+    [default_interface]
+    runtimeclass AppInfo
+    {
+        AppInfo();
+
+        static String GetGreeting();
+        String Version{ get; };
+    }
+}

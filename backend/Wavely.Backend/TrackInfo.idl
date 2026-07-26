@@ -1,0 +1,15 @@
+namespace Wavely.Backend
+{
+    [default_interface]
+    runtimeclass TrackInfo
+    {
+        TrackInfo();
+
+        String Title{ get; };
+        String Artist{ get; };
+        String Album{ get; };
+        Windows.Storage.Streams.IBuffer CoverArt{ get; };
+        Int64 DurationMs{ get; };
+        Boolean IsPlaying{ get; };
+    }
+}
