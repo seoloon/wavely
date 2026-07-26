@@ -16,22 +16,27 @@
             <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
         </Transitions>
     </Window.Transitions>
-    <Border x:Name="BackgroundBorder" CornerRadius="16" Padding="16">
-        <Border.Background>
-            <SolidColorBrush Color="#141418" Opacity="0.7" />
-        </Border.Background>
-        <StackPanel Spacing="8">
-            <Grid ColumnDefinitions="Auto,*">
-                <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
-                    <Image x:Name="CoverImage" Stretch="UniformToFill" />
-                </Border>
-                <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
-                    <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />
-                    <TextBlock x:Name="ArtistText" Foreground="#B4FFFFFF" />
-                    <TextBlock x:Name="StatusText" Foreground="#78FFFFFF" FontSize="10" />
+    <Border x:Name="BackgroundBorder" CornerRadius="16" ClipToBounds="True">
+        <Grid>
+            <Image x:Name="BlurBackgroundImage" Stretch="UniformToFill" IsVisible="False" />
+            <Border Padding="16">
+                <Border.Background>
+                    <SolidColorBrush Color="#141418" Opacity="0.7" />
+                </Border.Background>
+                <StackPanel Spacing="8">
+                    <Grid ColumnDefinitions="Auto,*">
+                        <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
+                            <Image x:Name="CoverImage" Stretch="UniformToFill" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />
+                            <TextBlock x:Name="ArtistText" Foreground="#B4FFFFFF" />
+                            <TextBlock x:Name="StatusText" Foreground="#78FFFFFF" FontSize="10" />
+                        </StackPanel>
+                    </Grid>
+                    <controls:WaveformControl x:Name="Waveform" Height="28" />
                 </StackPanel>
-            </Grid>
-            <controls:WaveformControl x:Name="Waveform" Height="28" />
-        </StackPanel>
+            </Border>
+        </Grid>
     </Border>
 </Window>

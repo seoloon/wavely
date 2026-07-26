@@ -13,6 +13,8 @@ namespace Wavely.App.Views;
 /// </summary>
 public partial class MainWindow
 {
+    private const double BackgroundBlurRadius = 24.0;
+
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
     private static readonly IBrush LightArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0xFF, 0xFF, 0xFF));
@@ -56,5 +58,15 @@ public partial class MainWindow
         TitleText.Foreground = textIsDark ? DarkTitleForeground : LightTitleForeground;
         ArtistText.Foreground = textIsDark ? DarkArtistForeground : LightArtistForeground;
         StatusText.Foreground = textIsDark ? DarkStatusForeground : LightStatusForeground;
+    }
+
+    /// <summary>Shows a heavily blurred copy of the current cover art behind the widget's
+    /// content when enabled - reuses the already-decoded CoverImage.Source bitmap rather than
+    /// re-decoding the cover, since both images just need the same pixels at different
+    /// treatments.</summary>
+    private void ApplyBlurBackground()
+    {
+        BlurBackgroundImage.Source = CoverImage.Source;
+        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && CoverImage.Source is not null;
     }
 }

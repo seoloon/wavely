@@ -96,6 +96,8 @@ public partial class MainWindow : Window
         ApplyScale(geometry.Scale);
         ApplyClickThrough(_config.ClickThroughEnabled);
         ApplyAppearance();
+        BlurBackgroundImage.Effect = new Avalonia.Media.BlurEffect { Radius = BackgroundBlurRadius };
+        ApplyBlurBackground();
 
         FadeIn();
     }
@@ -180,6 +182,7 @@ public partial class MainWindow : Window
         ApplyClickThrough(_config.ClickThroughEnabled);
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_config.HideOnPauseDelaySeconds, 5, 30));
         ApplyAppearance();
+        ApplyBlurBackground();
         if (_currentTrack is not null)
         {
             ApplyDynamicColors(_currentTrack);
@@ -268,6 +271,7 @@ public partial class MainWindow : Window
                 CoverImage.Source = null;
             }
 
+            ApplyBlurBackground();
             ApplyDynamicColors(track);
         });
     }
