@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Wavely.App.ViewModels"
+        xmlns:res="using:Wavely.App.Resources"
+        x:Class="Wavely.App.Views.SettingsWindow"
+        x:DataType="vm:SettingsViewModel"
+        Title="{x:Static res:Strings.SettingsWindowTitle}"
+        Width="420" Height="520"
+        CanResize="False"
+        WindowStartupLocation="CenterScreen">
+    <DockPanel Margin="16">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
+            <Button Content="{x:Static res:Strings.SettingsFooterReloadWidgetButton}" Command="{Binding ReloadWidgetCommand}" />
+        </StackPanel>
+        <TabControl>
+            <TabItem Header="{x:Static res:Strings.SettingsTabBehavior}">
+                <ScrollViewer>
+                <StackPanel Margin="12" Spacing="16">
+                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorLockedLabel}" IsChecked="{Binding Locked}" />
+                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorClickThroughLabel}" IsChecked="{Binding ClickThroughEnabled}" />
+                    <Button Content="{x:Static res:Strings.SettingsBehaviorResetSizeButton}" Command="{Binding ResetSizeCommand}" HorizontalAlignment="Left" />
+
+                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorHideOnPauseLabel}" IsChecked="{Binding HideOnPauseEnabled}" />
+                    <StackPanel Spacing="4" IsEnabled="{Binding HideOnPauseEnabled}">
+                        <TextBlock Text="{x:Static res:Strings.SettingsBehaviorHideOnPauseDelayLabel}" />
+                        <Slider Minimum="5" Maximum="30" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding HideOnPauseDelaySeconds}" />
+                        <TextBlock Text="{Binding HideOnPauseDelaySeconds}" HorizontalAlignment="Right" Opacity="0.7" FontSize="11" />
+                    </StackPanel>
+
+                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorLaunchAtStartupLabel}" IsChecked="{Binding LaunchAtStartup}" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Static res:Strings.SettingsBehaviorLanguageLabel}" />
+                        <ComboBox SelectedIndex="0" HorizontalAlignment="Left" MinWidth="160">
+                            <ComboBoxItem Content="Français" />
+                        </ComboBox>
+                    </StackPanel>
+                </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{x:Static res:Strings.SettingsTabAppearance}">
+                <TextBlock Text="{x:Static res:Strings.SettingsAppearanceNotYetAvailable}" Margin="12" TextWrapping="Wrap" Opacity="0.7" />
+            </TabItem>
+        </TabControl>
+    </DockPanel>
+</Window>

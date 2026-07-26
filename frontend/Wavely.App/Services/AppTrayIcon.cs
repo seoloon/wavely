@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
+using Wavely.App.Resources;
 using Wavely.App.Views;
 using Wavely.Backend;
 
@@ -23,25 +24,26 @@ public sealed class AppTrayIcon : IDisposable
     private readonly MediaSessionManager _sessionManager;
     private readonly NativeMenuItem _launchAtStartupItem;
 
-    public AppTrayIcon(MainWindow window, AppConfig config, MediaSessionManager sessionManager)
+    public AppTrayIcon(MainWindow window, AppConfig config, MediaSessionManager sessionManager, Action openSettings)
     {
         _window = window;
         _config = config;
         _sessionManager = sessionManager;
 
-        var settingsItem = new NativeMenuItem("Settings...") { IsEnabled = false }; // Lands in Phase 4.
+        var settingsItem = new NativeMenuItem(Strings.TrayIconSettingsMenuItem);
+        settingsItem.Click += (_, _) => openSettings();
 
-        var reloadItem = new NativeMenuItem("Reload widget");
+        var reloadItem = new NativeMenuItem(Strings.TrayIconReloadWidgetMenuItem);
         reloadItem.Click += (_, _) => _sessionManager.Refresh();
 
-        _launchAtStartupItem = new NativeMenuItem("Launch at startup")
+        _launchAtStartupItem = new NativeMenuItem(Strings.TrayIconLaunchAtStartupMenuItem)
         {
             ToggleType = NativeMenuItemToggleType.CheckBox,
             IsChecked = _config.LaunchAtStartup,
         };
         _launchAtStartupItem.Click += OnLaunchAtStartupClicked;
 
-        var quitItem = new NativeMenuItem("Quit");
+        var quitItem = new NativeMenuItem(Strings.TrayIconQuitMenuItem);
         quitItem.Click += (_, _) =>
         {
             if (Avalonia.Application.Current?.ApplicationLifetime is
@@ -62,6 +64,13 @@ public sealed class AppTrayIcon : IDisposable
         };
         _trayIcon.Clicked += OnClicked;
         _trayIcon.IsVisible = true;
+    }
+
+    /// <summary>Reflects an externally-changed AppConfig.LaunchAtStartup (e.g. from the Settings
+    /// window) back onto the tray's checkbox, since NativeMenuItem has no data binding.</summary>
+    public void RefreshLaunchAtStartup()
+    {
+        _launchAtStartupItem.IsChecked = _config.LaunchAtStartup;
     }
 
     private void OnClicked(object? sender, EventArgs e)

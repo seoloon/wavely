@@ -151,11 +151,26 @@ public partial class MainWindow : Window
             PositionY = geometry.PositionY,
             Scale = scale,
         });
-        var applied = _config.Geometry.Scale;
-        Width = DefaultWidth * applied;
-        Height = DefaultHeight * applied;
-        CoverBorder.Width = CoverSize * applied;
-        CoverBorder.Height = CoverSize * applied;
+        ApplyVisualScale(_config.Geometry.Scale);
+    }
+
+    private void ApplyVisualScale(double scale)
+    {
+        Width = DefaultWidth * scale;
+        Height = DefaultHeight * scale;
+        CoverBorder.Width = CoverSize * scale;
+        CoverBorder.Height = CoverSize * scale;
+    }
+
+    /// <summary>Re-applies state that the Settings window may have changed on the shared
+    /// AppConfig (scale, click-through, hide-on-pause delay) - those windows don't share a
+    /// ViewModel, so this is how the live widget picks up the change immediately instead of on
+    /// its next unrelated interaction.</summary>
+    public void RefreshFromConfig()
+    {
+        ApplyVisualScale(_config.Geometry.Scale);
+        ApplyClickThrough(_config.ClickThroughEnabled);
+        _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_config.HideOnPauseDelaySeconds, 5, 30));
     }
 
     private void SetClickThroughEnabled(bool enabled)

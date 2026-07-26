@@ -95,7 +95,18 @@ montage ailleurs ou d'ajouter une nouvelle runtime class :
      `frontend/Wavely.App/app.manifest` et, si elle vit dans un nouveau
      `.idl`, au `.def`** — sinon elle compile des deux côtés mais lève
      `REGDB_E_CLASSNOTREG` / `CO_E_ERRORINDLL` à l'exécution.
-4. **`dpiAwareness` (PerMonitorV2) peut faire échouer l'activation du
+4. **Un `.vcxproj` fraîchement cloné échoue toujours au premier build, jamais
+   au deuxième.** Cause précise, pas un flake mystérieux : l'item
+   `<ClCompile Include="...module.g.cpp" Condition="Exists(...)">` est évalué
+   à l'ouverture du projet, **avant** que la cible de projection de composant
+   (`CppWinRTMakeComponentProjection`) ne génère réellement ce fichier — sur
+   un dossier `build/` inexistant, la condition est donc fausse, `module.g.cpp`
+   (qui définit `WINRT_GetActivationFactory`/`WINRT_CanUnloadNow`) est exclu
+   de la passe 1, et l'édition de liens échoue (`LNK2001`). Le fichier existe
+   sur le disque au moment où la passe 2 réévalue la même condition, d'où le
+   succès systématique au second essai. `build.ps1` relance donc
+   automatiquement le build backend une fois en cas d'échec.
+5. **`dpiAwareness` (PerMonitorV2) peut faire échouer l'activation du
    manifeste entier** sur certaines configurations (« paramètre ... non
    inscrit », `SideBySide` event id 79) ; `dpiAware=true/PM` (V1) suffit et
    est plus largement supporté.

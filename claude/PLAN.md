@@ -96,6 +96,8 @@ Test : Redémarrer Windows → Wavely relance automatiquement
 ## PHASE 4 — Fenêtre Paramètres (Session 5-6)
 > *Durée : 2 sessions | Objectif : Tous les settings fonctionnent*
 
+> **Statut (2026-07-26) : Session 5 (4.1-4.2) livrée et vérifiée par interaction réelle** (UI Automation `TogglePattern`/`InvokePattern`, pas seulement compilation) : `SettingsWindow` + `SettingsViewModel` (`CommunityToolkit.Mvvm`), i18n via `Resources/Strings.resx` (RULES.md SS6 - wrapper `Strings.cs` écrit à la main plutôt que le générateur Visual Studio `ResXFileCodeGenerator`, qui ne tourne qu'en design-time IDE et pas depuis `dotnet build`/`MSBuild.exe` en ligne de commande). Vérifié : cocher "Lancer au démarrage" écrit bien la clé registre (confirmé par `reg query` indépendant) ; "Réinitialiser la taille" persiste ET **met à jour le widget en direct** sans redémarrage (mécanisme `SettingsViewModel.ConfigChanged` → `MainWindow.RefreshFromConfig()`, nécessaire car Settings et le widget sont deux fenêtres qui ne partagent pas de ViewModel) ; cocher "Click-through" applique bien `WS_EX_TRANSPARENT` en direct sur le widget. Le bouton "Recharger le widget" (4.7, en avance sur la Session 6) est aussi dans le footer. Le menu tray "Paramètres..." (précédemment désactivé) ouvre maintenant cette fenêtre. Écart mineur avec ce tableau : "Reset taille/position" n'a été implémenté que pour la **taille** (position conservée), conformément au texte plus précis de `claude/PROMPT.md` ("Réinitialiser la taille").
+
 ### Session 5 — Structure & Onglet Comportement
 | # | Tâche | Détail | Livrable |
 |---|-------|--------|----------|

@@ -1,0 +1,39 @@
+using System.Globalization;
+using System.Resources;
+
+namespace Wavely.App.Resources;
+
+/// <summary>
+/// Thin, hand-written wrapper around the embedded Strings.resx (RULES.md SS6: no hardcoded
+/// strings in AXAML/C#). Deliberately not the Visual Studio-generated ResXFileCodeGenerator
+/// class - that codegen only runs at IDE design-time, not from a command-line MSBuild/dotnet
+/// build, which is what actually builds this project (see docs/ADR-002 addendum). Adding a
+/// language later only requires a new Strings.&lt;culture&gt;.resx next to this one; the SDK's
+/// default item globbing turns it into a satellite resource assembly automatically.
+/// </summary>
+internal static class Strings
+{
+    private static readonly ResourceManager ResourceManager = new("Wavely.App.Resources.Strings", typeof(Strings).Assembly);
+
+    /// <summary>Overrides the culture used to resolve strings; null uses the current UI culture.</summary>
+    public static CultureInfo? Culture { get; set; }
+
+    public static string SettingsWindowTitle => Get("Settings_Window_Title");
+    public static string SettingsTabBehavior => Get("Settings_Tab_Behavior");
+    public static string SettingsTabAppearance => Get("Settings_Tab_Appearance");
+    public static string SettingsBehaviorLockedLabel => Get("Settings_Behavior_Locked_Label");
+    public static string SettingsBehaviorClickThroughLabel => Get("Settings_Behavior_ClickThrough_Label");
+    public static string SettingsBehaviorResetSizeButton => Get("Settings_Behavior_ResetSize_Button");
+    public static string SettingsBehaviorHideOnPauseLabel => Get("Settings_Behavior_HideOnPause_Label");
+    public static string SettingsBehaviorHideOnPauseDelayLabel => Get("Settings_Behavior_HideOnPauseDelay_Label");
+    public static string SettingsBehaviorLaunchAtStartupLabel => Get("Settings_Behavior_LaunchAtStartup_Label");
+    public static string SettingsBehaviorLanguageLabel => Get("Settings_Behavior_Language_Label");
+    public static string SettingsAppearanceNotYetAvailable => Get("Settings_Appearance_NotYetAvailable");
+    public static string SettingsFooterReloadWidgetButton => Get("Settings_Footer_ReloadWidget_Button");
+    public static string TrayIconSettingsMenuItem => Get("TrayIcon_Settings_MenuItem");
+    public static string TrayIconReloadWidgetMenuItem => Get("TrayIcon_ReloadWidget_MenuItem");
+    public static string TrayIconLaunchAtStartupMenuItem => Get("TrayIcon_LaunchAtStartup_MenuItem");
+    public static string TrayIconQuitMenuItem => Get("TrayIcon_Quit_MenuItem");
+
+    private static string Get(string name) => ResourceManager.GetString(name, Culture) ?? name;
+}
