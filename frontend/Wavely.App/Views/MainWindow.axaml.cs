@@ -42,6 +42,7 @@ public partial class MainWindow : Window
     private Win32Properties.CustomWndProcHookCallback? _wndProcHook;
     private IntPtr _hwnd;
     private bool _hiddenByAutoHide;
+    private TrackInfo? _currentTrack;
 
     public MainWindow(AppConfig config, MediaSessionManager sessionManager, WaveformEngine waveformEngine)
     {
@@ -179,24 +180,9 @@ public partial class MainWindow : Window
         ApplyClickThrough(_config.ClickThroughEnabled);
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_config.HideOnPauseDelaySeconds, 5, 30));
         ApplyAppearance();
-    }
-
-    /// <summary>Applies the appearance settings that already have a visual effect without the
-    /// cover-color-extraction/blur/preset rendering work planned for later phases: background
-    /// opacity (baked into the background brush's own alpha, not the whole window's Opacity, so
-    /// text/icons stay fully readable) and the app-wide dark/light theme variant.</summary>
-    private void ApplyAppearance()
-    {
-        if (BackgroundBorder.Background is Avalonia.Media.SolidColorBrush backgroundBrush)
+        if (_currentTrack is not null)
         {
-            backgroundBrush.Opacity = _config.BackgroundOpacity;
-        }
-
-        if (Application.Current is { } app)
-        {
-            app.RequestedThemeVariant = _config.Theme == ThemeMode.Dark
-                ? Avalonia.Styling.ThemeVariant.Dark
-                : Avalonia.Styling.ThemeVariant.Light;
+            ApplyDynamicColors(_currentTrack);
         }
     }
 
@@ -266,6 +252,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
+            _currentTrack = track;
             TitleText.Text = string.IsNullOrEmpty(track.Title) ? "No track playing" : track.Title;
             ArtistText.Text = track.Artist;
 
@@ -280,6 +267,8 @@ public partial class MainWindow : Window
             {
                 CoverImage.Source = null;
             }
+
+            ApplyDynamicColors(track);
         });
     }
 
