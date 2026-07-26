@@ -90,7 +90,31 @@
     <value>Langue</value>
   </data>
   <data name="Settings_Appearance_NotYetAvailable" xml:space="preserve">
-    <value>Les presets d'apparence arrivent dans une prochaine phase.</value>
+    <value>Le rendu visuel de ces réglages arrive dans une prochaine phase (extraction de couleurs, flou, presets). Les choix ci-dessous sont déjà enregistrés.</value>
+  </data>
+  <data name="Settings_Appearance_Preset_Label" xml:space="preserve">
+    <value>Preset</value>
+  </data>
+  <data name="Settings_Appearance_CoverShape_Label" xml:space="preserve">
+    <value>Forme de la pochette</value>
+  </data>
+  <data name="Settings_Appearance_Glow_Label" xml:space="preserve">
+    <value>Glow de la pochette</value>
+  </data>
+  <data name="Settings_Appearance_DynamicColors_Label" xml:space="preserve">
+    <value>Couleurs dynamiques (depuis la pochette)</value>
+  </data>
+  <data name="Settings_Appearance_DynamicBackground_Label" xml:space="preserve">
+    <value>Fond couleur dominante</value>
+  </data>
+  <data name="Settings_Appearance_BlurredCover_Label" xml:space="preserve">
+    <value>Fond pochette floutée</value>
+  </data>
+  <data name="Settings_Appearance_Opacity_Label" xml:space="preserve">
+    <value>Opacité du fond</value>
+  </data>
+  <data name="Settings_Appearance_Theme_Label" xml:space="preserve">
+    <value>Thème</value>
   </data>
   <data name="Settings_Footer_ReloadWidget_Button" xml:space="preserve">
     <value>Recharger le widget</value>

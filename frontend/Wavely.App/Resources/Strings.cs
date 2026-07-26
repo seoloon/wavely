@@ -29,6 +29,14 @@ internal static class Strings
     public static string SettingsBehaviorLaunchAtStartupLabel => Get("Settings_Behavior_LaunchAtStartup_Label");
     public static string SettingsBehaviorLanguageLabel => Get("Settings_Behavior_Language_Label");
     public static string SettingsAppearanceNotYetAvailable => Get("Settings_Appearance_NotYetAvailable");
+    public static string SettingsAppearancePresetLabel => Get("Settings_Appearance_Preset_Label");
+    public static string SettingsAppearanceCoverShapeLabel => Get("Settings_Appearance_CoverShape_Label");
+    public static string SettingsAppearanceGlowLabel => Get("Settings_Appearance_Glow_Label");
+    public static string SettingsAppearanceDynamicColorsLabel => Get("Settings_Appearance_DynamicColors_Label");
+    public static string SettingsAppearanceDynamicBackgroundLabel => Get("Settings_Appearance_DynamicBackground_Label");
+    public static string SettingsAppearanceBlurredCoverLabel => Get("Settings_Appearance_BlurredCover_Label");
+    public static string SettingsAppearanceOpacityLabel => Get("Settings_Appearance_Opacity_Label");
+    public static string SettingsAppearanceThemeLabel => Get("Settings_Appearance_Theme_Label");
     public static string SettingsFooterReloadWidgetButton => Get("Settings_Footer_ReloadWidget_Button");
     public static string TrayIconSettingsMenuItem => Get("TrayIcon_Settings_MenuItem");
     public static string TrayIconReloadWidgetMenuItem => Get("TrayIcon_ReloadWidget_MenuItem");

@@ -6,6 +6,13 @@ namespace Wavely.Backend
         Light,
     };
 
+    enum CoverStyle
+    {
+        Square,
+        Squircle,
+        Vinyl,
+    };
+
     struct WidgetGeometry
     {
         Int32 PositionX;
@@ -27,6 +34,14 @@ namespace Wavely.Backend
         ThemeMode Theme{ get; };
         String LanguageCode{ get; };
 
+        Int32 PresetIndex{ get; };
+        CoverStyle CoverShape{ get; };
+        Boolean CoverGlowEnabled{ get; };
+        Boolean CoverBlurEnabled{ get; };
+        Boolean DynamicColorsEnabled{ get; };
+        Boolean DynamicBackgroundEnabled{ get; };
+        Double BackgroundOpacity{ get; };
+
         void SetGeometry(WidgetGeometry geometry);
         void SetLocked(Boolean locked);
         void SetClickThroughEnabled(Boolean enabled);
@@ -35,5 +50,13 @@ namespace Wavely.Backend
         void SetLaunchAtStartup(Boolean enabled);
         void SetTheme(ThemeMode theme);
         void SetLanguageCode(String languageCode);
+
+        void SetPresetIndex(Int32 index);
+        void SetCoverShape(CoverStyle shape);
+        void SetCoverGlowEnabled(Boolean enabled);
+        void SetCoverBlurEnabled(Boolean enabled);
+        void SetDynamicColorsEnabled(Boolean enabled);
+        void SetDynamicBackgroundEnabled(Boolean enabled);
+        void SetBackgroundOpacity(Double opacity);
     }
 }

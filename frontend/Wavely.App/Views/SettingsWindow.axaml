@@ -39,7 +39,38 @@
                 </ScrollViewer>
             </TabItem>
             <TabItem Header="{x:Static res:Strings.SettingsTabAppearance}">
-                <TextBlock Text="{x:Static res:Strings.SettingsAppearanceNotYetAvailable}" Margin="12" TextWrapping="Wrap" Opacity="0.7" />
+                <ScrollViewer>
+                <StackPanel Margin="12" Spacing="16">
+                    <TextBlock Text="{x:Static res:Strings.SettingsAppearanceNotYetAvailable}" TextWrapping="Wrap" Opacity="0.7" FontSize="11" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Static res:Strings.SettingsAppearancePresetLabel}" />
+                        <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.PresetNames}" SelectedIndex="{Binding PresetIndex}" HorizontalAlignment="Left" MinWidth="160" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Static res:Strings.SettingsAppearanceCoverShapeLabel}" />
+                        <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.CoverShapeNames}" SelectedIndex="{Binding CoverShapeIndex}" HorizontalAlignment="Left" MinWidth="160" />
+                    </StackPanel>
+
+                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceGlowLabel}" IsChecked="{Binding CoverGlowEnabled}" />
+                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceBlurredCoverLabel}" IsChecked="{Binding CoverBlurEnabled}" />
+
+                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicColorsLabel}" IsChecked="{Binding DynamicColorsEnabled}" />
+                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicBackgroundLabel}" IsChecked="{Binding DynamicBackgroundEnabled}" IsEnabled="{Binding DynamicColorsEnabled}" Margin="20,0,0,0" />
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Static res:Strings.SettingsAppearanceOpacityLabel}" />
+                        <Slider Minimum="0" Maximum="100" Value="{Binding BackgroundOpacityPercent}" />
+                        <TextBlock Text="{Binding BackgroundOpacityPercent, StringFormat={}{0:0}%}" HorizontalAlignment="Right" Opacity="0.7" FontSize="11" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="{x:Static res:Strings.SettingsAppearanceThemeLabel}" />
+                        <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Left" MinWidth="160" />
+                    </StackPanel>
+                </StackPanel>
+                </ScrollViewer>
             </TabItem>
         </TabControl>
     </DockPanel>

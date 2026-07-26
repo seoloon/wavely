@@ -16,6 +16,10 @@ namespace winrt::Wavely::Backend::implementation
         constexpr double kMaxScale = 1.5;
         constexpr std::int32_t kMinHideOnPauseDelaySeconds = 5;
         constexpr std::int32_t kMaxHideOnPauseDelaySeconds = 30;
+        constexpr std::int32_t kMinPresetIndex = 0;
+        constexpr std::int32_t kMaxPresetIndex = 6;
+        constexpr double kMinBackgroundOpacity = 0.0;
+        constexpr double kMaxBackgroundOpacity = 1.0;
         constexpr wchar_t kAppFolderName[] = L"Wavely";
         constexpr wchar_t kSettingsFileName[] = L"settings.json";
 
@@ -68,6 +72,15 @@ namespace winrt::Wavely::Backend::implementation
         m_launchAtStartup = json.value("launchAtStartup", m_launchAtStartup);
         m_theme = static_cast<ThemeMode>(json.value("theme", static_cast<int>(m_theme)));
         m_languageCode = winrt::to_hstring(json.value("languageCode", winrt::to_string(m_languageCode)));
+
+        m_presetIndex = std::clamp(json.value("presetIndex", m_presetIndex), kMinPresetIndex, kMaxPresetIndex);
+        m_coverShape = static_cast<CoverStyle>(json.value("coverShape", static_cast<int>(m_coverShape)));
+        m_coverGlowEnabled = json.value("coverGlowEnabled", m_coverGlowEnabled);
+        m_coverBlurEnabled = json.value("coverBlurEnabled", m_coverBlurEnabled);
+        m_dynamicColorsEnabled = json.value("dynamicColorsEnabled", m_dynamicColorsEnabled);
+        m_dynamicBackgroundEnabled = json.value("dynamicBackgroundEnabled", m_dynamicBackgroundEnabled);
+        m_backgroundOpacity = std::clamp(
+            json.value("backgroundOpacity", m_backgroundOpacity), kMinBackgroundOpacity, kMaxBackgroundOpacity);
     }
 
     void AppConfig::saveLocked() const
@@ -83,6 +96,14 @@ namespace winrt::Wavely::Backend::implementation
         json["launchAtStartup"] = m_launchAtStartup;
         json["theme"] = static_cast<int>(m_theme);
         json["languageCode"] = winrt::to_string(m_languageCode);
+
+        json["presetIndex"] = m_presetIndex;
+        json["coverShape"] = static_cast<int>(m_coverShape);
+        json["coverGlowEnabled"] = m_coverGlowEnabled;
+        json["coverBlurEnabled"] = m_coverBlurEnabled;
+        json["dynamicColorsEnabled"] = m_dynamicColorsEnabled;
+        json["dynamicBackgroundEnabled"] = m_dynamicBackgroundEnabled;
+        json["backgroundOpacity"] = m_backgroundOpacity;
 
         std::ofstream file(settingsFilePath());
         file << json.dump(2);
@@ -190,6 +211,97 @@ namespace winrt::Wavely::Backend::implementation
     {
         const std::lock_guard lock(m_mutex);
         m_languageCode = languageCode;
+        saveLocked();
+    }
+
+    std::int32_t AppConfig::PresetIndex()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_presetIndex;
+    }
+
+    winrt::Wavely::Backend::CoverStyle AppConfig::CoverShape()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_coverShape;
+    }
+
+    bool AppConfig::CoverGlowEnabled()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_coverGlowEnabled;
+    }
+
+    bool AppConfig::CoverBlurEnabled()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_coverBlurEnabled;
+    }
+
+    bool AppConfig::DynamicColorsEnabled()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_dynamicColorsEnabled;
+    }
+
+    bool AppConfig::DynamicBackgroundEnabled()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_dynamicBackgroundEnabled;
+    }
+
+    double AppConfig::BackgroundOpacity()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_backgroundOpacity;
+    }
+
+    void AppConfig::SetPresetIndex(std::int32_t index)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_presetIndex = std::clamp(index, kMinPresetIndex, kMaxPresetIndex);
+        saveLocked();
+    }
+
+    void AppConfig::SetCoverShape(winrt::Wavely::Backend::CoverStyle const& shape)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_coverShape = shape;
+        saveLocked();
+    }
+
+    void AppConfig::SetCoverGlowEnabled(bool enabled)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_coverGlowEnabled = enabled;
+        saveLocked();
+    }
+
+    void AppConfig::SetCoverBlurEnabled(bool enabled)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_coverBlurEnabled = enabled;
+        saveLocked();
+    }
+
+    void AppConfig::SetDynamicColorsEnabled(bool enabled)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_dynamicColorsEnabled = enabled;
+        saveLocked();
+    }
+
+    void AppConfig::SetDynamicBackgroundEnabled(bool enabled)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_dynamicBackgroundEnabled = enabled;
+        saveLocked();
+    }
+
+    void AppConfig::SetBackgroundOpacity(double opacity)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_backgroundOpacity = std::clamp(opacity, kMinBackgroundOpacity, kMaxBackgroundOpacity);
         saveLocked();
     }
 }

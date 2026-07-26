@@ -89,6 +89,7 @@ public partial class MainWindow : Window
         Position = new PixelPoint(geometry.PositionX, geometry.PositionY);
         ApplyScale(geometry.Scale);
         ApplyClickThrough(_config.ClickThroughEnabled);
+        ApplyAppearance();
 
         FadeIn();
     }
@@ -171,6 +172,26 @@ public partial class MainWindow : Window
         ApplyVisualScale(_config.Geometry.Scale);
         ApplyClickThrough(_config.ClickThroughEnabled);
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_config.HideOnPauseDelaySeconds, 5, 30));
+        ApplyAppearance();
+    }
+
+    /// <summary>Applies the appearance settings that already have a visual effect without the
+    /// cover-color-extraction/blur/preset rendering work planned for later phases: background
+    /// opacity (baked into the background brush's own alpha, not the whole window's Opacity, so
+    /// text/icons stay fully readable) and the app-wide dark/light theme variant.</summary>
+    private void ApplyAppearance()
+    {
+        if (BackgroundBorder.Background is Avalonia.Media.SolidColorBrush backgroundBrush)
+        {
+            backgroundBrush.Opacity = _config.BackgroundOpacity;
+        }
+
+        if (Application.Current is { } app)
+        {
+            app.RequestedThemeVariant = _config.Theme == ThemeMode.Dark
+                ? Avalonia.Styling.ThemeVariant.Dark
+                : Avalonia.Styling.ThemeVariant.Light;
+        }
     }
 
     private void SetClickThroughEnabled(bool enabled)

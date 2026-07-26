@@ -15,7 +15,10 @@
             <DoubleTransition Property="Opacity" Duration="0:0:0.3" />
         </Transitions>
     </Window.Transitions>
-    <Border CornerRadius="16" Background="#B4141418" Padding="16">
+    <Border x:Name="BackgroundBorder" CornerRadius="16" Padding="16">
+        <Border.Background>
+            <SolidColorBrush Color="#141418" Opacity="0.7" />
+        </Border.Background>
         <Grid ColumnDefinitions="Auto,*">
             <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
                 <Image x:Name="CoverImage" Stretch="UniformToFill" />
