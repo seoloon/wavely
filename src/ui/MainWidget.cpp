@@ -2,8 +2,10 @@
 
 #include "core/MediaMetadata.hpp"
 #include "core/MediaSessionManager.hpp"
+#include "ui/TrayIcon.hpp"
 #include "ui/VisibilityController.hpp"
 
+#include <QCloseEvent>
 #include <QColor>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -94,7 +96,11 @@ MainWidget::MainWidget(QWidget* parent)
     setScale(m_config.values().geometry.scale);
     setClickThroughEnabled(m_config.values().clickThroughEnabled);
     m_visibilityController->fadeIn();
+
+    m_trayIcon = std::make_unique<TrayIcon>(this, m_config);
 }
+
+MainWidget::~MainWidget() = default;
 
 void MainWidget::paintEvent(QPaintEvent* /*event*/) {
     QPainter painter(this);
@@ -137,6 +143,13 @@ void MainWidget::showEvent(QShowEvent* event) {
 void MainWidget::hideEvent(QHideEvent* event) {
     QWidget::hideEvent(event);
     m_clickThroughHandle->hide();
+}
+
+void MainWidget::closeEvent(QCloseEvent* event) {
+    // The app lives in the tray (see TrayIcon): closing the widget only hides it, it does not
+    // quit. Only the tray's "Quit" action terminates the process.
+    event->ignore();
+    hide();
 }
 
 bool MainWidget::nativeEvent(const QByteArray& eventType, void* message, qintptr* result) {

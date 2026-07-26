@@ -25,6 +25,10 @@ public:
     /// rather than relying on this singleton's static-storage destruction order.
     void stop();
 
+    /// Re-fetches the current session's metadata, cover art and playback state and re-emits
+    /// the corresponding signals. Used by the tray's "Reload" action.
+    void refresh();
+
     const TrackInfo& currentTrack() const noexcept { return m_currentTrack; }
 
 signals:

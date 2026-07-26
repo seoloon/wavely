@@ -15,6 +15,7 @@ struct TrackInfo;
 namespace wavely::ui {
 
 class VisibilityController;
+class TrayIcon;
 
 /// Frameless, translucent top-level window hosting the Wavely overlay widget: draggable via the
 /// OS caption trick (multi-monitor for free), resizable 50%-150%, toggleable click-through, and
@@ -24,6 +25,9 @@ class MainWidget : public QWidget {
 
 public:
     explicit MainWidget(QWidget* parent = nullptr);
+    // Declared (defined as = default in the .cpp) so std::unique_ptr<TrayIcon>'s destructor
+    // instantiates where TrayIcon is a complete type, not wherever this header is included.
+    ~MainWidget() override;
 
 protected:
     void paintEvent(QPaintEvent* event) override;
@@ -32,6 +36,7 @@ protected:
     void moveEvent(QMoveEvent* event) override;
     void showEvent(QShowEvent* event) override;
     void hideEvent(QHideEvent* event) override;
+    void closeEvent(QCloseEvent* event) override;
     bool nativeEvent(const QByteArray& eventType, void* message, qintptr* result) override;
     bool eventFilter(QObject* watched, QEvent* event) override;
 
@@ -46,6 +51,7 @@ private:
 
     settings::AppConfig m_config;
     VisibilityController* m_visibilityController;
+    std::unique_ptr<TrayIcon> m_trayIcon;
 
     QLabel* m_coverLabel;
     QLabel* m_titleLabel;

@@ -23,6 +23,7 @@ VisibilityController::VisibilityController(QWidget* target, QObject* parent)
     connect(m_fadeAnimation, &QPropertyAnimation::finished, this, [this]() {
         if (m_target->windowOpacity() <= 0.0) {
             m_target->hide();
+            m_hiddenByAutoHide = true;
         }
     });
 }
@@ -50,10 +51,11 @@ void VisibilityController::fadeIn() {
 void VisibilityController::onPlaybackStateChanged(bool isPlaying) {
     if (isPlaying) {
         m_hideTimer->stop();
-        if (!m_target->isVisible()) {
+        if (m_hiddenByAutoHide) {
             // Reappearing after a full hide is instant by design; only the hide fades.
             m_target->setWindowOpacity(1.0);
             m_target->show();
+            m_hiddenByAutoHide = false;
         }
     } else if (m_hideOnPauseEnabled) {
         m_hideTimer->start();

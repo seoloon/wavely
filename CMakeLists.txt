@@ -55,6 +55,8 @@ add_executable(Wavely WIN32
     src/core/Handle.hpp
     src/core/ComPtr.hpp
     src/core/WinrtGuard.hpp
+    src/core/AutoStart.hpp
+    src/core/AutoStart.cpp
     src/core/MediaMetadata.hpp
     src/core/MediaSessionManager.hpp
     src/core/MediaSessionManager.cpp
@@ -62,6 +64,8 @@ add_executable(Wavely WIN32
     src/settings/AppConfig.cpp
     src/ui/MainWidget.hpp
     src/ui/MainWidget.cpp
+    src/ui/TrayIcon.hpp
+    src/ui/TrayIcon.cpp
     src/ui/VisibilityController.hpp
     src/ui/VisibilityController.cpp
 )

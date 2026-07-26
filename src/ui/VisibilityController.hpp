@@ -36,6 +36,11 @@ private:
     QPropertyAnimation* m_fadeAnimation;
     QTimer* m_hideTimer;
     bool m_hideOnPauseEnabled = false;
+
+    /// True only while the target is hidden because of the pause-triggered auto-hide.
+    /// Without this, resuming playback would also force back open a widget the user hid
+    /// manually (e.g. via the tray icon), which isn't this class's call to make.
+    bool m_hiddenByAutoHide = false;
 };
 
 } // namespace wavely::ui

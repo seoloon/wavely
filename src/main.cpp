@@ -10,6 +10,9 @@ int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     QApplication::setOrganizationName(QStringLiteral("Wavely"));
     QApplication::setApplicationName(QStringLiteral("Wavely"));
+    // The tray icon (see TrayIcon) is what keeps the app alive; closing the widget only hides
+    // it (MainWidget::closeEvent), so the app must not quit just because it became invisible.
+    QApplication::setQuitOnLastWindowClosed(false);
 
     wavely::ui::MainWidget widget;
 

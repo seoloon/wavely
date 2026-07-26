@@ -73,7 +73,7 @@ struct MediaSessionManager::Impl {
     }
 
     void onSessionsChanged() {
-        if (m_stopped.load()) {
+        if (m_stopped.load() || !m_sessionManager) {
             return;
         }
         unsubscribeFromCurrentSession();
@@ -191,6 +191,10 @@ void MediaSessionManager::start() {
 
 void MediaSessionManager::stop() {
     m_impl->stop();
+}
+
+void MediaSessionManager::refresh() {
+    m_impl->onSessionsChanged();
 }
 
 } // namespace wavely::core
