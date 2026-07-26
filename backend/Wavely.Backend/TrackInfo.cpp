@@ -24,6 +24,11 @@ namespace winrt::Wavely::Backend::implementation
         return m_coverArt;
     }
 
+    winrt::Windows::Storage::Streams::IBuffer TrackInfo::DominantColors()
+    {
+        return m_dominantColors;
+    }
+
     std::int64_t TrackInfo::DurationMs()
     {
         return m_durationMs;

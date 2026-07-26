@@ -2,9 +2,11 @@
 #include "MediaSessionManager.h"
 #include "MediaSessionManager.g.cpp"
 
+#include "Core/ColorExtractor.h"
 #include "Core/MusicAppAllowlist.h"
 
 #include <chrono>
+#include <cstring>
 #include <sstream>
 
 namespace winrt::Wavely::Backend::implementation
@@ -51,6 +53,15 @@ namespace winrt::Wavely::Backend::implementation
             }
             Buffer buffer(size);
             co_return co_await stream.ReadAsync(buffer, size, InputStreamOptions::None);
+        }
+
+        IBuffer packColorPalette(::Wavely::Backend::Core::ColorPalette const& palette)
+        {
+            constexpr auto byteSize = static_cast<uint32_t>(::Wavely::Backend::Core::kColorPaletteSize * sizeof(std::uint32_t));
+            Buffer buffer(byteSize);
+            buffer.Length(byteSize);
+            std::memcpy(buffer.data(), palette.data(), byteSize);
+            return buffer;
         }
     }
 
@@ -222,6 +233,10 @@ namespace winrt::Wavely::Backend::implementation
                 if (const auto buffer = co_await loadThumbnailBuffer(thumbnail))
                 {
                     trackImpl.SetCoverArt(buffer);
+                    if (const auto palette = ::Wavely::Backend::Core::ExtractDominantColors(buffer))
+                    {
+                        trackImpl.SetDominantColors(packColorPalette(*palette));
+                    }
                 }
             }
         }

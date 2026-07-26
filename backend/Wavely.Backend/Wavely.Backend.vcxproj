@@ -137,6 +137,9 @@
     <ClInclude Include="Core\WinrtGuard.h" />
     <ClInclude Include="Core\RegistryKey.h" />
     <ClInclude Include="Core\RingBuffer.h" />
+    <ClInclude Include="Core\MusicAppAllowlist.h" />
+    <ClInclude Include="Core\ColorExtractor.h" />
+    <ClCompile Include="Core\ColorExtractor.cpp" />
     <ClCompile Include="$(GeneratedFilesDir)module.g.cpp" Condition="Exists('$(GeneratedFilesDir)module.g.cpp')" />
   </ItemGroup>
 

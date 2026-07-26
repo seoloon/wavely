@@ -9,6 +9,7 @@ namespace Wavely.Backend
         String Artist{ get; };
         String Album{ get; };
         Windows.Storage.Streams.IBuffer CoverArt{ get; };
+        Windows.Storage.Streams.IBuffer DominantColors{ get; };
         Int64 DurationMs{ get; };
         Boolean IsPlaying{ get; };
     }

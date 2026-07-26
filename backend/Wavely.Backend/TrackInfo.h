@@ -15,6 +15,10 @@ namespace winrt::Wavely::Backend::implementation
         hstring Artist();
         hstring Album();
         winrt::Windows::Storage::Streams::IBuffer CoverArt();
+        /// 5 dominant colors extracted from CoverArt, packed as 5 little-endian 0xAARRGGBB
+        /// uint32s (same zero-copy IBuffer convention as WaveformEngine's band buffer). Null if
+        /// there is no cover art or it couldn't be decoded - see Core::ExtractDominantColors.
+        winrt::Windows::Storage::Streams::IBuffer DominantColors();
         std::int64_t DurationMs();
         bool IsPlaying();
 
@@ -22,6 +26,7 @@ namespace winrt::Wavely::Backend::implementation
         void SetArtist(hstring const& value) { m_artist = value; }
         void SetAlbum(hstring const& value) { m_album = value; }
         void SetCoverArt(winrt::Windows::Storage::Streams::IBuffer const& value) { m_coverArt = value; }
+        void SetDominantColors(winrt::Windows::Storage::Streams::IBuffer const& value) { m_dominantColors = value; }
         void SetDurationMs(std::int64_t value) { m_durationMs = value; }
         void SetIsPlaying(bool value) { m_isPlaying = value; }
 
@@ -30,6 +35,7 @@ namespace winrt::Wavely::Backend::implementation
         hstring m_artist;
         hstring m_album;
         winrt::Windows::Storage::Streams::IBuffer m_coverArt{ nullptr };
+        winrt::Windows::Storage::Streams::IBuffer m_dominantColors{ nullptr };
         std::int64_t m_durationMs = 0;
         bool m_isPlaying = false;
     };
