@@ -187,7 +187,7 @@ git commit -m "feat: expose live playback position from GSMTC (Phase 7 prerequis
 
 **Interfaces:**
 - Consumes: `Wavely.Backend.TrackInfo.PositionMs/DurationMs`, `MediaSessionManager.PositionChanged`.
-- Produces: `PlaybackPositionTracker.Tick` event (`EventHandler<PlaybackPositionEventArgs>` with `Position`/`Duration` as `TimeSpan` and `Percent` as `double`), `PlaybackPositionTracker.Reset(TrackInfo track)`, `SetPlaying(bool isPlaying)`.
+- Produces: `PlaybackPositionTracker.Tick` event (`EventHandler<PlaybackPositionEventArgs>` with `Position`/`Duration` as `TimeSpan` and `Percent` as `double`), `PlaybackPositionTracker.Sync(TrackInfo track)`, `SetPlaying(bool isPlaying)`.
 
 - [ ] **Step 1: Write the tracker**
 
