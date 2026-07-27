@@ -29,7 +29,7 @@
                             <Grid>
                                 <Image x:Name="CoverImage" Stretch="UniformToFill" RenderTransformOrigin="0.5,0.5">
                                     <Image.RenderTransform>
-                                        <RotateTransform x:Name="CoverRotateTransform" Angle="0" />
+                                        <RotateTransform Angle="0" />
                                     </Image.RenderTransform>
                                 </Image>
                                 <Ellipse x:Name="VinylSpindle" Width="14" Height="14" Fill="#1A1A1A" IsVisible="False" />

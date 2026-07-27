@@ -130,9 +130,9 @@ public partial class MainWindow
     }
 
     /// <summary>Starts or stops the vinyl spin timer to match whether the cover is currently a
-    /// spinning vinyl (shape == Vinyl AND playing). Stopping the timer leaves
-    /// CoverRotateTransform.Angle wherever it was - resuming continues from that angle rather
-    /// than snapping back to 0, matching how a real turntable behaves.</summary>
+    /// spinning vinyl (shape == Vinyl AND playing). Stopping the timer leaves the cover's rotation
+    /// angle wherever it was - resuming continues from that angle rather than snapping back to 0,
+    /// matching how a real turntable behaves.</summary>
     private void UpdateVinylRotationState()
     {
         var shouldRotate = _config.CoverShape == CoverStyle.Vinyl && _isPlaying;

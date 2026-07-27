@@ -4,7 +4,6 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Controls.Primitives;
 using Avalonia.Input;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
@@ -71,16 +70,17 @@ public partial class MainWindow : Window
             _hiddenByAutoHide = true;
         };
 
+        // The RotateTransform is set inline under Image.RenderTransform in the AXAML (no x:Name:
+        // Avalonia's compiler rejects x:Name on a non-visual object nested in a property-element
+        // like this with AVLN2000 "Unable to resolve suitable regular or attached property Name").
+        // Resolve it once here, right after InitializeComponent(), via the CoverImage field it's
+        // assigned to, and capture that single resolved instance in the Tick closure so the 60fps
+        // timer never pays for a per-tick NameScope lookup.
+        var coverRotateTransform = (RotateTransform)CoverImage.RenderTransform!;
         _vinylRotationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
         _vinylRotationTimer.Tick += (_, _) =>
-        {
-            var rotateTransform = NameScope.GetNameScope(this)?.Find<RotateTransform>("CoverRotateTransform");
-            if (rotateTransform is not null)
-            {
-                rotateTransform.Angle = (rotateTransform.Angle
-                    + VinylRotationDegreesPerSecond * _vinylRotationTimer.Interval.TotalSeconds) % 360.0;
-            }
-        };
+            coverRotateTransform.Angle = (coverRotateTransform.Angle
+                + VinylRotationDegreesPerSecond * _vinylRotationTimer.Interval.TotalSeconds) % 360.0;
 
         _clickThroughHandle.HandleClicked += (_, _) => SetClickThroughEnabled(false);
 
