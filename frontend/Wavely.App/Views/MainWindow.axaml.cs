@@ -170,6 +170,7 @@ public partial class MainWindow : Window
         CoverBorder.Width = CoverSize * scale;
         CoverBorder.Height = CoverSize * scale;
         Waveform.Height = WaveformHeight * scale;
+        ApplyCoverShape();
     }
 
     /// <summary>Re-applies state that the Settings window may have changed on the shared

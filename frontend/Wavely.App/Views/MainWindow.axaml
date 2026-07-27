@@ -25,8 +25,15 @@
                 </Border.Background>
                 <StackPanel Spacing="8">
                     <Grid ColumnDefinitions="Auto,*">
-                        <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88" CornerRadius="8" ClipToBounds="True">
-                            <Image x:Name="CoverImage" Stretch="UniformToFill" />
+                        <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88">
+                            <Grid>
+                                <Image x:Name="CoverImage" Stretch="UniformToFill" RenderTransformOrigin="0.5,0.5">
+                                    <Image.RenderTransform>
+                                        <RotateTransform x:Name="CoverRotateTransform" Angle="0" />
+                                    </Image.RenderTransform>
+                                </Image>
+                                <Ellipse x:Name="VinylSpindle" Width="14" Height="14" Fill="#1A1A1A" IsVisible="False" />
+                            </Grid>
                         </Border>
                         <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
                             <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />

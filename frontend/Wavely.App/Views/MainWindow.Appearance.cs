@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Media;
+using Wavely.App.Core;
 using Wavely.App.Services;
 using Wavely.Backend;
 
@@ -16,6 +17,7 @@ public partial class MainWindow
     private const double BackgroundBlurRadius = 24.0;
     private const double GlowBlurRadius = 18.0;
     private const double GlowOpacity = 0.9;
+    private const double CoverCornerRadius = 8.0;
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
@@ -93,5 +95,35 @@ public partial class MainWindow
             ShadowDepth = 0.0,
             Opacity = GlowOpacity,
         };
+    }
+
+    /// <summary>Switches the cover's clip shape between the three CoverStyle values. Square
+    /// keeps using Border's own corner-radius clipping (already verified in earlier phases);
+    /// Squircle and Vinyl switch to an explicit Clip geometry instead, since neither shape is
+    /// expressible via CornerRadius.</summary>
+    private void ApplyCoverShape()
+    {
+        var size = CoverBorder.Width;
+        switch (_config.CoverShape)
+        {
+            case CoverStyle.Square:
+                CoverBorder.ClipToBounds = true;
+                CoverBorder.CornerRadius = new CornerRadius(CoverCornerRadius);
+                CoverBorder.Clip = null;
+                VinylSpindle.IsVisible = false;
+                break;
+            case CoverStyle.Squircle:
+                CoverBorder.ClipToBounds = false;
+                CoverBorder.CornerRadius = new CornerRadius(0);
+                CoverBorder.Clip = SquircleGeometry.ForSize(size);
+                VinylSpindle.IsVisible = false;
+                break;
+            case CoverStyle.Vinyl:
+                CoverBorder.ClipToBounds = false;
+                CoverBorder.CornerRadius = new CornerRadius(0);
+                CoverBorder.Clip = new EllipseGeometry(new Rect(0, 0, size, size));
+                VinylSpindle.IsVisible = true;
+                break;
+        }
     }
 }
