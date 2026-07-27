@@ -25,16 +25,7 @@
                 </Border.Background>
                 <StackPanel Spacing="8">
                     <Grid ColumnDefinitions="Auto,*">
-                        <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88">
-                            <Grid>
-                                <Image x:Name="CoverImage" Stretch="UniformToFill" RenderTransformOrigin="50%,50%">
-                                    <Image.RenderTransform>
-                                        <RotateTransform Angle="0" />
-                                    </Image.RenderTransform>
-                                </Image>
-                                <Ellipse x:Name="VinylSpindle" Width="7" Height="7" Fill="#1A1A1A" IsVisible="False" />
-                            </Grid>
-                        </Border>
+                        <controls:CoverArtControl x:Name="Cover" Grid.Column="0" Width="88" Height="88" />
                         <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
                             <TextBlock x:Name="TitleText" Text="No track playing" FontWeight="Bold" Foreground="White" />
                             <TextBlock x:Name="ArtistText" Foreground="#B4FFFFFF" />

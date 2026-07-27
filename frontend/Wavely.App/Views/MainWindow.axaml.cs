@@ -39,12 +39,10 @@ public partial class MainWindow : Window
     private readonly WaveformEngine _waveformEngine;
     private readonly DispatcherTimer _hideTimer;
     private readonly DispatcherTimer _hideAfterFadeTimer;
-    private readonly DispatcherTimer _vinylRotationTimer;
     private readonly ClickThroughHandle _clickThroughHandle = new();
     private Win32Properties.CustomWndProcHookCallback? _wndProcHook;
     private IntPtr _hwnd;
     private bool _hiddenByAutoHide;
-    private bool _isPlaying;
     private TrackInfo? _currentTrack;
 
     public MainWindow(AppConfig config, MediaSessionManager sessionManager, WaveformEngine waveformEngine)
@@ -69,18 +67,6 @@ public partial class MainWindow : Window
             _clickThroughHandle.Hide();
             _hiddenByAutoHide = true;
         };
-
-        // The RotateTransform is set inline under Image.RenderTransform in the AXAML (no x:Name:
-        // Avalonia's compiler rejects x:Name on a non-visual object nested in a property-element
-        // like this with AVLN2000 "Unable to resolve suitable regular or attached property Name").
-        // Resolve it once here, right after InitializeComponent(), via the CoverImage field it's
-        // assigned to, and capture that single resolved instance in the Tick closure so the 60fps
-        // timer never pays for a per-tick NameScope lookup.
-        var coverRotateTransform = (RotateTransform)CoverImage.RenderTransform!;
-        _vinylRotationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        _vinylRotationTimer.Tick += (_, _) =>
-            coverRotateTransform.Angle = (coverRotateTransform.Angle
-                + VinylRotationDegreesPerSecond * _vinylRotationTimer.Interval.TotalSeconds) % 360.0;
 
         _clickThroughHandle.HandleClicked += (_, _) => SetClickThroughEnabled(false);
 
@@ -111,6 +97,7 @@ public partial class MainWindow : Window
         ApplyScale(geometry.Scale);
         ApplyClickThrough(_config.ClickThroughEnabled);
         ApplyAppearance();
+        ApplyCoverAppearance();
         BlurBackgroundImage.Effect = new Avalonia.Media.BlurEffect { Radius = BackgroundBlurRadius };
         ApplyBlurBackground();
 
@@ -182,10 +169,9 @@ public partial class MainWindow : Window
     {
         Width = DefaultWidth * scale;
         Height = DefaultHeight * scale;
-        CoverBorder.Width = CoverSize * scale;
-        CoverBorder.Height = CoverSize * scale;
+        Cover.Width = CoverSize * scale;
+        Cover.Height = CoverSize * scale;
         Waveform.Height = WaveformHeight * scale;
-        ApplyCoverShape();
     }
 
     /// <summary>Re-applies state that the Settings window may have changed on the shared
@@ -198,6 +184,7 @@ public partial class MainWindow : Window
         ApplyClickThrough(_config.ClickThroughEnabled);
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_config.HideOnPauseDelaySeconds, 5, 30));
         ApplyAppearance();
+        ApplyCoverAppearance();
         ApplyBlurBackground();
         if (_currentTrack is not null)
         {
@@ -276,16 +263,7 @@ public partial class MainWindow : Window
             ArtistText.Text = track.Artist;
 
             var coverArt = track.CoverArt;
-            if (coverArt is { Length: > 0 })
-            {
-                var bytes = coverArt.ToArray();
-                using var stream = new MemoryStream(bytes);
-                CoverImage.Source = new Bitmap(stream);
-            }
-            else
-            {
-                CoverImage.Source = null;
-            }
+            Cover.SetSource(coverArt is { Length: > 0 } ? new Bitmap(new MemoryStream(coverArt.ToArray())) : null);
 
             ApplyBlurBackground();
             ApplyDynamicColors(track);
@@ -296,8 +274,7 @@ public partial class MainWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
-            _isPlaying = isPlaying;
-            UpdateVinylRotationState();
+            Cover.IsPlaying = isPlaying;
 
             StatusText.Text = isPlaying ? "Playing" : "Paused";
 

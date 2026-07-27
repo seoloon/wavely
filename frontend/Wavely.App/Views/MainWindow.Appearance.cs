@@ -1,6 +1,5 @@
 using Avalonia;
 using Avalonia.Media;
-using Wavely.App.Core;
 using Wavely.App.Services;
 using Wavely.Backend;
 
@@ -15,10 +14,6 @@ namespace Wavely.App.Views;
 public partial class MainWindow
 {
     private const double BackgroundBlurRadius = 24.0;
-    private const double GlowBlurRadius = 18.0;
-    private const double GlowOpacity = 0.9;
-    private const double CoverCornerRadius = 8.0;
-    private const double VinylRotationDegreesPerSecond = 90.0; // 360 degrees every 4 seconds.
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
@@ -64,85 +59,24 @@ public partial class MainWindow
         ArtistText.Foreground = textIsDark ? DarkArtistForeground : LightArtistForeground;
         StatusText.Foreground = textIsDark ? DarkStatusForeground : LightStatusForeground;
 
-        ApplyGlow(_config.DynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow);
+        Cover.GlowColor = _config.DynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow;
+    }
+
+    /// <summary>Applies the cover's clip shape and glow toggle from AppConfig - split out from
+    /// <see cref="ApplyDynamicColors"/> so it also runs before the first track arrives (glow's
+    /// color still defaults to <see cref="WidgetColorScheme.Default"/> until then).</summary>
+    private void ApplyCoverAppearance()
+    {
+        Cover.Shape = _config.CoverShape;
+        Cover.GlowEnabled = _config.CoverGlowEnabled;
     }
 
     /// <summary>Shows a heavily blurred copy of the current cover art behind the widget's
-    /// content when enabled - reuses the already-decoded CoverImage.Source bitmap rather than
-    /// re-decoding the cover, since both images just need the same pixels at different
-    /// treatments.</summary>
+    /// content when enabled - reuses the already-decoded cover bitmap rather than re-decoding
+    /// the cover, since both images just need the same pixels at different treatments.</summary>
     private void ApplyBlurBackground()
     {
-        BlurBackgroundImage.Source = CoverImage.Source;
-        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && CoverImage.Source is not null;
-    }
-
-    /// <summary>Applies (or clears) a colored halo around the cover. Color follows the dynamic
-    /// palette when enabled, otherwise a neutral white glow - independent of whether dynamic
-    /// colors are on, the glow's presence is controlled only by CoverGlowEnabled.</summary>
-    private void ApplyGlow(Color glowColor)
-    {
-        if (!_config.CoverGlowEnabled)
-        {
-            CoverBorder.Effect = null;
-            return;
-        }
-
-        CoverBorder.Effect = new DropShadowDirectionEffect
-        {
-            Color = glowColor,
-            BlurRadius = GlowBlurRadius,
-            Direction = 0.0,
-            ShadowDepth = 0.0,
-            Opacity = GlowOpacity,
-        };
-    }
-
-    /// <summary>Switches the cover's clip shape between the three CoverStyle values. Square
-    /// keeps using Border's own corner-radius clipping (already verified in earlier phases);
-    /// Squircle and Vinyl switch to an explicit Clip geometry instead, since neither shape is
-    /// expressible via CornerRadius.</summary>
-    private void ApplyCoverShape()
-    {
-        var size = CoverBorder.Width;
-        switch (_config.CoverShape)
-        {
-            case CoverStyle.Square:
-                CoverBorder.ClipToBounds = true;
-                CoverBorder.CornerRadius = new CornerRadius(CoverCornerRadius);
-                CoverBorder.Clip = null;
-                VinylSpindle.IsVisible = false;
-                break;
-            case CoverStyle.Squircle:
-                CoverBorder.ClipToBounds = false;
-                CoverBorder.CornerRadius = new CornerRadius(0);
-                CoverBorder.Clip = SquircleGeometry.ForSize(size);
-                VinylSpindle.IsVisible = false;
-                break;
-            case CoverStyle.Vinyl:
-                CoverBorder.ClipToBounds = false;
-                CoverBorder.CornerRadius = new CornerRadius(0);
-                CoverBorder.Clip = new EllipseGeometry(new Rect(0, 0, size, size));
-                VinylSpindle.IsVisible = true;
-                break;
-        }
-        UpdateVinylRotationState();
-    }
-
-    /// <summary>Starts or stops the vinyl spin timer to match whether the cover is currently a
-    /// spinning vinyl (shape == Vinyl AND playing). Stopping the timer leaves the cover's rotation
-    /// angle wherever it was - resuming continues from that angle rather than snapping back to 0,
-    /// matching how a real turntable behaves.</summary>
-    private void UpdateVinylRotationState()
-    {
-        var shouldRotate = _config.CoverShape == CoverStyle.Vinyl && _isPlaying;
-        if (shouldRotate && !_vinylRotationTimer.IsEnabled)
-        {
-            _vinylRotationTimer.Start();
-        }
-        else if (!shouldRotate && _vinylRotationTimer.IsEnabled)
-        {
-            _vinylRotationTimer.Stop();
-        }
+        BlurBackgroundImage.Source = Cover.Source;
+        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && Cover.Source is not null;
     }
 }
