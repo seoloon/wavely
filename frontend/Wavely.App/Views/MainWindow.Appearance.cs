@@ -18,6 +18,7 @@ public partial class MainWindow
     private const double GlowBlurRadius = 18.0;
     private const double GlowOpacity = 0.9;
     private const double CoverCornerRadius = 8.0;
+    private const double VinylRotationDegreesPerSecond = 90.0; // 360 degrees every 4 seconds.
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
@@ -124,6 +125,24 @@ public partial class MainWindow
                 CoverBorder.Clip = new EllipseGeometry(new Rect(0, 0, size, size));
                 VinylSpindle.IsVisible = true;
                 break;
+        }
+        UpdateVinylRotationState();
+    }
+
+    /// <summary>Starts or stops the vinyl spin timer to match whether the cover is currently a
+    /// spinning vinyl (shape == Vinyl AND playing). Stopping the timer leaves
+    /// CoverRotateTransform.Angle wherever it was - resuming continues from that angle rather
+    /// than snapping back to 0, matching how a real turntable behaves.</summary>
+    private void UpdateVinylRotationState()
+    {
+        var shouldRotate = _config.CoverShape == CoverStyle.Vinyl && _isPlaying;
+        if (shouldRotate && !_vinylRotationTimer.IsEnabled)
+        {
+            _vinylRotationTimer.Start();
+        }
+        else if (!shouldRotate && _vinylRotationTimer.IsEnabled)
+        {
+            _vinylRotationTimer.Stop();
         }
     }
 }

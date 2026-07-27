@@ -4,7 +4,9 @@ using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Input;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Wavely.Backend;
@@ -38,10 +40,12 @@ public partial class MainWindow : Window
     private readonly WaveformEngine _waveformEngine;
     private readonly DispatcherTimer _hideTimer;
     private readonly DispatcherTimer _hideAfterFadeTimer;
+    private readonly DispatcherTimer _vinylRotationTimer;
     private readonly ClickThroughHandle _clickThroughHandle = new();
     private Win32Properties.CustomWndProcHookCallback? _wndProcHook;
     private IntPtr _hwnd;
     private bool _hiddenByAutoHide;
+    private bool _isPlaying;
     private TrackInfo? _currentTrack;
 
     public MainWindow(AppConfig config, MediaSessionManager sessionManager, WaveformEngine waveformEngine)
@@ -65,6 +69,17 @@ public partial class MainWindow : Window
             Hide();
             _clickThroughHandle.Hide();
             _hiddenByAutoHide = true;
+        };
+
+        _vinylRotationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
+        _vinylRotationTimer.Tick += (_, _) =>
+        {
+            var rotateTransform = NameScope.GetNameScope(this)?.Find<RotateTransform>("CoverRotateTransform");
+            if (rotateTransform is not null)
+            {
+                rotateTransform.Angle = (rotateTransform.Angle
+                    + VinylRotationDegreesPerSecond * _vinylRotationTimer.Interval.TotalSeconds) % 360.0;
+            }
         };
 
         _clickThroughHandle.HandleClicked += (_, _) => SetClickThroughEnabled(false);
@@ -281,6 +296,9 @@ public partial class MainWindow : Window
     {
         Dispatcher.UIThread.Post(() =>
         {
+            _isPlaying = isPlaying;
+            UpdateVinylRotationState();
+
             StatusText.Text = isPlaying ? "Playing" : "Paused";
 
             if (isPlaying)
