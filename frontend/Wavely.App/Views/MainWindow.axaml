@@ -27,7 +27,7 @@
                     <Grid ColumnDefinitions="Auto,*">
                         <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88">
                             <Grid>
-                                <Image x:Name="CoverImage" Stretch="UniformToFill" RenderTransformOrigin="0.5,0.5">
+                                <Image x:Name="CoverImage" Stretch="UniformToFill" RenderTransformOrigin="50%,50%">
                                     <Image.RenderTransform>
                                         <RotateTransform Angle="0" />
                                     </Image.RenderTransform>
