@@ -32,7 +32,7 @@
                                         <RotateTransform Angle="0" />
                                     </Image.RenderTransform>
                                 </Image>
-                                <Ellipse x:Name="VinylSpindle" Width="14" Height="14" Fill="#1A1A1A" IsVisible="False" />
+                                <Ellipse x:Name="VinylSpindle" Width="7" Height="7" Fill="#1A1A1A" IsVisible="False" />
                             </Grid>
                         </Border>
                         <StackPanel Grid.Column="1" Margin="16,0,0,0" VerticalAlignment="Center" Spacing="4">
