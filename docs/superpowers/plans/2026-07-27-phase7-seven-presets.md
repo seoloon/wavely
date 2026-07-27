@@ -394,13 +394,15 @@ git commit -m "feat: add shared ProgressBarControl for preset progress bars"
 
 ---
 
-### Task 4: Extract `CoverArtControl` from `MainWindow`
+### Task 4: Extract `CoverArtControl` from `MainWindow` (self-contained — builds and runs on its own)
 
 **Files:**
 - Create: `frontend/Wavely.App/Controls/CoverArtControl.axaml`, `CoverArtControl.axaml.cs`
-- Modify: `frontend/Wavely.App/Views/MainWindow.axaml` — remove the hardcoded cover `Grid` (lines 28-37 today).
-- Modify: `frontend/Wavely.App/Views/MainWindow.Appearance.cs` — remove `ApplyCoverShape`, `UpdateVinylRotationState`, `CoverCornerRadius`, `VinylRotationDegreesPerSecond`, `ApplyGlow` (moved into the control).
-- Modify: `frontend/Wavely.App/Views/MainWindow.axaml.cs` — remove `_vinylRotationTimer` and its constructor wiring, remove `CoverBorder.Width/Height` sizing from `ApplyVisualScale` (the control now owns its own size).
+- Modify: `frontend/Wavely.App/Views/MainWindow.axaml` — replace the hardcoded cover `Grid` (lines 28-37 today) with one `<controls:CoverArtControl>` instance.
+- Modify: `frontend/Wavely.App/Views/MainWindow.Appearance.cs` — remove `ApplyCoverShape`, `UpdateVinylRotationState`, `CoverCornerRadius`, `VinylRotationDegreesPerSecond`, `ApplyGlow` (moved into the control); `ApplyDynamicColors`'s glow call and `ApplyVisualScale`'s cover sizing now go through the control's properties instead.
+- Modify: `frontend/Wavely.App/Views/MainWindow.axaml.cs` — remove `_vinylRotationTimer` and its constructor wiring (owned by the control now).
+
+**Note on sequencing:** this task keeps `MainWindow` as today's single hardcoded layout (cover + title/artist/status + waveform) — it does **not** yet introduce `PresetHost`/`IPresetView`. That restructuring is Task 6, once a first concrete preset view exists to put in it. This task is a pure, independently buildable and testable refactor: after it, the widget looks and behaves *exactly* as it did at the end of Phase 6 (same verified square/squircle/vinyl/glow/spin behavior), just with that logic extracted into a reusable control.
 
 **Interfaces:**
 - Produces: `CoverArtControl.SetSource(Bitmap? bitmap)`, `Shape` (`CoverStyle`), `GlowEnabled` (bool), `GlowColor` (Color), `IsPlaying` (bool) — spinning is `Shape == Vinyl && IsPlaying`, matching the exact rule already verified in Phase 6.
@@ -556,37 +558,103 @@ public partial class CoverArtControl : UserControl
 }
 ```
 
-- [ ] **Step 3: Remove the extracted logic from `MainWindow.Appearance.cs`**
+- [ ] **Step 3: Replace the cover markup in `MainWindow.axaml`**
 
-Delete `ApplyCoverShape`, `UpdateVinylRotationState`, the `CoverCornerRadius`/`VinylRotationDegreesPerSecond` constants, and the `ApplyGlow` method (glow is now driven per-preset via `CoverArtControl.GlowEnabled`/`GlowColor`, called from each preset view rather than `MainWindow.Appearance.cs`). `ApplyDynamicColors` loses its `ApplyGlow(...)` call at the bottom — glow application moves to Task 6's preset-switch wiring instead, which has a reference to the active preset's `CoverArtControl`.
+Replace:
+```xml
+                        <Border x:Name="CoverBorder" Grid.Column="0" Width="88" Height="88">
+                            <Grid>
+                                <Image x:Name="CoverImage" Stretch="UniformToFill" RenderTransformOrigin="50%,50%">
+                                    <Image.RenderTransform>
+                                        <RotateTransform Angle="0" />
+                                    </Image.RenderTransform>
+                                </Image>
+                                <Ellipse x:Name="VinylSpindle" Width="7" Height="7" Fill="#1A1A1A" IsVisible="False" />
+                            </Grid>
+                        </Border>
+```
+with:
+```xml
+                        <controls:CoverArtControl x:Name="Cover" Grid.Column="0" Width="88" Height="88" />
+```
+(`xmlns:controls="using:Wavely.App.Controls"` is already declared on the `Window` root from Phase 5's `WaveformControl` usage — no new namespace import needed.)
 
-- [ ] **Step 4: Remove the vinyl timer from `MainWindow.axaml.cs`**
+- [ ] **Step 4: Update `MainWindow.axaml.cs`'s call sites**
 
-Delete the `_vinylRotationTimer` field, its constructor setup block (the `coverRotateTransform`/`_vinylRotationTimer` lines), and the `CoverBorder.Width`/`Height` lines in `ApplyVisualScale` (cover sizing now belongs to whichever preset view is active — Task 6 handles resizing the active preset's cover).
+Remove the `_vinylRotationTimer` field and its constructor setup block (the `coverRotateTransform`/`_vinylRotationTimer` lines - the control now owns this internally). In `ApplyVisualScale`, replace the `CoverBorder.Width`/`Height` lines with `Cover.Width`/`Cover.Height`:
+```csharp
+private void ApplyVisualScale(double scale)
+{
+    Width = DefaultWidth * scale;
+    Height = DefaultHeight * scale;
+    Cover.Width = CoverSize * scale;
+    Cover.Height = CoverSize * scale;
+    Waveform.Height = WaveformHeight * scale;
+}
+```
+In `OnTrackChanged`, replace the `CoverImage.Source = ...` block with `Cover.SetSource(...)`:
+```csharp
+var coverArt = track.CoverArt;
+Cover.SetSource(coverArt is { Length: > 0 } ? new Bitmap(new MemoryStream(coverArt.ToArray())) : null);
+```
+In `OnPlaybackStateChanged`, add `Cover.IsPlaying = isPlaying;` at the top of the `Dispatcher.UIThread.Post` lambda (replacing what `UpdateVinylRotationState()` used to do).
 
-- [ ] **Step 5: Remove the hardcoded cover markup from `MainWindow.axaml`**
+- [ ] **Step 5: Update `MainWindow.Appearance.cs`**
 
-This step's edit is superseded by Task 6's full `MainWindow.axaml` rewrite (the whole `StackPanel` content becomes `PresetHost`) — no separate edit needed here; listed for traceability only.
+Delete `ApplyCoverShape`, `UpdateVinylRotationState`, the `CoverCornerRadius`/`VinylRotationDegreesPerSecond` constants, and the `ApplyGlow` method. In `ApplyDynamicColors`, replace the trailing `ApplyGlow(...)` call with direct property sets on the control, and set `Cover.Shape` from `_config.CoverShape` (previously done by the now-deleted `ApplyCoverShape`, called from `ApplyVisualScale` - move that call to `ApplyDynamicColors` and to a new call site in the constructor/`OnOpened` so shape is applied even before the first track arrives):
+```csharp
+private void ApplyDynamicColors(TrackInfo track)
+{
+    var scheme = DynamicColorService.Resolve(track);
+
+    if (BackgroundTintBorder.Background is SolidColorBrush backgroundBrush)
+    {
+        backgroundBrush.Color = _config.DynamicBackgroundEnabled ? scheme.Background : WidgetColorScheme.Default.Background;
+    }
+
+    Waveform.AccentColor = _config.DynamicColorsEnabled ? scheme.Accent : WidgetColorScheme.Default.Accent;
+
+    var textIsDark = _config.DynamicColorsEnabled && scheme.TextIsDark;
+    TitleText.Foreground = textIsDark ? DarkTitleForeground : LightTitleForeground;
+    ArtistText.Foreground = textIsDark ? DarkArtistForeground : LightArtistForeground;
+    StatusText.Foreground = textIsDark ? DarkStatusForeground : LightStatusForeground;
+
+    Cover.GlowColor = _config.DynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow;
+}
+
+private void ApplyCoverAppearance()
+{
+    Cover.Shape = _config.CoverShape;
+    Cover.GlowEnabled = _config.CoverGlowEnabled;
+}
+```
+Call `ApplyCoverAppearance();` from `OnOpened` (next to the existing `ApplyAppearance();` call) and from `RefreshFromConfig` (next to its existing `ApplyAppearance();` call), so shape/glow apply both at startup and whenever Settings changes them.
 
 - [ ] **Step 6: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
-Expected: `Build complete (Debug).` — MainWindow won't reference `CoverBorder`/`CoverImage`/`VinylSpindle` anymore after Task 6's rewrite; until Task 6 lands, this task alone leaves MainWindow non-compiling (`CoverBorder` etc. still referenced by the old markup Step 5 defers). **Do Tasks 4 and 6 as one build/commit unit** — commit only after Task 6's rewrite compiles, per Step 7 below.
+Expected: `Build complete (Debug).`
 
-- [ ] **Step 7: Commit (deferred)**
+- [ ] **Step 7: Run and verify no regression**
 
-Commit this task's files together with Task 6's, once both compile — see Task 6's commit step.
+Run `Wavely.App.exe` with a real GSMTC session. Confirm cover shape (Square/Squircle/Vinyl), glow, and vinyl spin/pause-freeze/resume all behave exactly as verified at the end of Phase 6 — this task changed *where* the logic lives, not what it does.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add frontend/Wavely.App/Controls/CoverArtControl.axaml frontend/Wavely.App/Controls/CoverArtControl.axaml.cs frontend/Wavely.App/Views/MainWindow.axaml frontend/Wavely.App/Views/MainWindow.axaml.cs frontend/Wavely.App/Views/MainWindow.Appearance.cs
+git commit -m "refactor: extract CoverArtControl from MainWindow for reuse across Phase 7 presets"
+```
 
 ---
 
-### Task 5: `IPresetView` + `PresetCatalog`
+### Task 5: `IPresetView`
 
 **Files:**
 - Create: `frontend/Wavely.App/Controls/IPresetView.cs`
-- Create: `frontend/Wavely.App/Controls/PresetCatalog.cs`
 
 **Interfaces:**
-- Produces: `IPresetView` (implemented by all 7 preset views, Tasks 7-13), `PresetCatalog.Entries` (`IReadOnlyList<PresetEntry>`), `PresetEntry(string Name, Size WindowSize, Func<IPresetView> Factory)`.
+- Produces: `IPresetView` (implemented by all 7 preset views, Tasks 6-12).
 
 - [ ] **Step 1: Write `IPresetView`**
 
@@ -611,56 +679,36 @@ public interface IPresetView
 }
 ```
 
-- [ ] **Step 2: Write `PresetCatalog`**
-
-```csharp
-using Avalonia;
-
-namespace Wavely.App.Controls;
-
-public sealed record PresetEntry(string Name, Size WindowSize, Func<IPresetView> Factory);
-
-/// <summary>
-/// The 7 presets in AppConfig.PresetIndex order (matches SettingsViewModel.PresetNames and
-/// assets/presets_reference/layouts.ts exactly). MainWindow indexes into this to know both which
-/// view to host and what base window size to resize to before the user's 50%-150% scale is
-/// applied on top.
-/// </summary>
-public static class PresetCatalog
-{
-    public static IReadOnlyList<PresetEntry> Entries { get; } =
-    [
-        new("Compact", new Size(360, 110), () => new Presets.CompactPresetView()),
-        new("Boxy", new Size(340, 170), () => new Presets.BoxyPresetView()),
-        new("Gallery", new Size(240, 350), () => new Presets.GalleryPresetView()),
-        new("Minimal", new Size(300, 54), () => new Presets.MinimalPresetView()),
-        new("macOS", new Size(340, 122), () => new Presets.MacosPresetView()),
-        new("Shell", new Size(360, 156), () => new Presets.ShellPresetView()),
-        new("Discord", new Size(360, 146), () => new Presets.DiscordPresetView()),
-    ];
-
-    public static PresetEntry Resolve(int index) =>
-        index >= 0 && index < Entries.Count ? Entries[index] : Entries[0];
-}
-```
-
-- [ ] **Step 3: Build**
+- [ ] **Step 2: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
-Expected: **fails** — `Presets.CompactPresetView` etc. don't exist yet. This is expected; Tasks 7-13 create them. Do not commit yet.
+Expected: `Build complete (Debug).` — unused until Task 6 wires it in.
+
+- [ ] **Step 3: Commit**
+
+```bash
+git add frontend/Wavely.App/Controls/IPresetView.cs
+git commit -m "feat: add IPresetView, the interface every Phase 7 preset implements"
+```
 
 ---
 
-### Task 6: Wire the preset engine into `MainWindow`
+### Task 6: Preset engine + `CompactPresetView` (first preset — replaces `MainWindow`'s hardcoded layout)
 
 **Files:**
-- Modify: `frontend/Wavely.App/Views/MainWindow.axaml` — replace the `StackPanel` content with `PresetHost`.
+- Create: `frontend/Wavely.App/Controls/PresetCatalog.cs`
+- Create: `frontend/Wavely.App/Views/Presets/CompactPresetView.axaml`, `CompactPresetView.axaml.cs`
+- Modify: `frontend/Wavely.App/Views/MainWindow.axaml` — replace the `StackPanel` content (the cover/text/waveform Task 4 left in place) with `PresetHost`.
 - Modify: `frontend/Wavely.App/Views/MainWindow.axaml.cs` — track the active `IPresetView`, resize to the preset's base size, forward all events to it.
-- Modify: `frontend/Wavely.App/Views/MainWindow.Appearance.cs` — `ApplyDynamicColors`/`ApplyAppearance` forward to the active preset instead of touching named elements directly.
+- Modify: `frontend/Wavely.App/Views/MainWindow.Appearance.cs` — `ApplyDynamicColors`/`ApplyAppearance`/`ApplyCoverAppearance` forward to the active preset instead of touching named elements directly.
 
 **Interfaces:**
-- Consumes: `PresetCatalog`, `IPresetView` (Task 5), `PlaybackPositionTracker` (Task 2), `CoverArtControl` (Task 4, used inside each preset view - Tasks 7-13), `ProgressBarControl` (Task 3, ditto).
-- Produces: `MainWindow.ApplyPreset(int index)` — nothing later depends on this beyond MainWindow's own call sites.
+- Consumes: `IPresetView` (Task 5), `PlaybackPositionTracker` (Task 2), `CoverArtControl` (Task 4), `ProgressBarControl` (Task 3), `WaveformControl` (existing, Phase 5).
+- Produces: `PresetCatalog.Entries`/`PresetEntry`/`Resolve` (Tasks 7-12 each append one entry), `MainWindow.ApplyPreset(int index)`.
+
+**Spec source for `CompactPresetView`:** `assets/presets_reference/layouts/CompactLayout.svelte`. Cover 72px/radius 10. Two side-by-side panels: title+artist (marquee → ellipsis per Global Constraints), and a meta panel with time/waveform/time above a progress bar.
+
+This task both stands up the generic engine AND is the first preset — after it, `MainWindow` no longer has any hardcoded cover/text/waveform elements of its own (those move into `CompactPresetView`, the only entry `PresetCatalog` has so far). The widget's visible behavior at the end of this task is Compact, unconditionally (no Settings toggle takes effect yet — that starts working the moment Task 7 gives `PresetCatalog` a second entry).
 
 - [ ] **Step 1: Rewrite `MainWindow.axaml`**
 
@@ -893,29 +941,36 @@ private void ApplyBlurBackground()
 ```
 (`using Wavely.App.Controls;` and `using Wavely.App.Services;` need adding to this file's usings for `IPresetView`/`WidgetColorScheme`/`PresetCatalog`.)
 
-- [ ] **Step 4: Build**
+- [ ] **Step 4: Write `PresetCatalog` (Compact-only for now)**
 
-Run: `.\build.ps1 -Configuration Debug`
-Expected: still **fails** (Tasks 7-13's preset views don't exist). Continue to Task 7 before the first real build/verify pass — see Task 7's own build step, which is the first one expected to succeed (with only `CompactPresetView` implemented, the others still missing) only once `PresetCatalog` no longer references types that don't exist yet. **To keep every task's build green, implement Task 7 immediately after this one, in the same sitting, before attempting a build.**
+```csharp
+using Avalonia;
 
-- [ ] **Step 5: Commit (deferred to Task 7)**
+namespace Wavely.App.Controls;
 
-Tasks 4, 5, 6 and 7 share one commit, once the four together produce the first successful build — see Task 7's commit step.
+public sealed record PresetEntry(string Name, Size WindowSize, Func<IPresetView> Factory);
 
----
+/// <summary>
+/// The presets in AppConfig.PresetIndex order (matches SettingsViewModel.PresetNames and
+/// assets/presets_reference/layouts.ts exactly). MainWindow indexes into this to know both which
+/// view to host and what base window size to resize to before the user's 50%-150% scale is
+/// applied on top. Grows by one entry per Phase 7 task (Tasks 7-12) until all 7 are present.
+/// </summary>
+public static class PresetCatalog
+{
+    public static IReadOnlyList<PresetEntry> Entries { get; } =
+    [
+        new("Compact", new Size(360, 110), () => new Views.Presets.CompactPresetView()),
+    ];
 
-### Task 7: `CompactPresetView` (+ first successful build across Tasks 4-7)
+    public static PresetEntry Resolve(int index) =>
+        index >= 0 && index < Entries.Count ? Entries[index] : Entries[0];
+}
+```
 
-**Files:**
-- Create: `frontend/Wavely.App/Views/Presets/CompactPresetView.axaml`, `CompactPresetView.axaml.cs`
+- [ ] **Step 5: Write `CompactPresetView.axaml`**
 
 **Spec source:** `assets/presets_reference/layouts/CompactLayout.svelte`. Cover 72px/radius 10. Two side-by-side panels: title+artist (marquee → ellipsis per Global Constraints), and a meta panel with time/waveform/time above a progress bar.
-
-**Interfaces:**
-- Consumes: `CoverArtControl` (Task 4), `ProgressBarControl` (Task 3), `WaveformControl` (existing, Phase 5), `IPresetView` (Task 5).
-- Produces: nothing later tasks depend on — each preset view is a leaf.
-
-- [ ] **Step 1: Write `CompactPresetView.axaml`**
 
 ```xml
 <UserControl xmlns="https://github.com/avaloniaui"
@@ -944,7 +999,7 @@ Tasks 4, 5, 6 and 7 share one commit, once the four together produce the first s
 </UserControl>
 ```
 
-- [ ] **Step 2: Write `CompactPresetView.axaml.cs`**
+- [ ] **Step 6: Write `CompactPresetView.axaml.cs`**
 
 ```csharp
 using System.IO;
@@ -994,17 +1049,29 @@ public partial class CompactPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build**
+- [ ] **Step 7: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
-Expected: still **fails** — `PresetCatalog` (Task 5) references `Presets.BoxyPresetView` etc. which don't exist yet. This is expected until Task 13 lands all 7. Keep going.
+Expected: `Build complete (Debug).`
+
+- [ ] **Step 8: Run and verify**
+
+Run `Wavely.App.exe` with a real GSMTC session. Confirm: window is Compact's 360×110 base size (× the persisted scale), cover/title/artist/waveform/progress bar all render and update live, cover shape/glow/vinyl-spin still work exactly as before (Task 4 behavior, now reached through `IPresetView.ApplyCoverAppearance`), and the progress bar advances smoothly and the time labels tick up over a couple of seconds of real playback (first real exercise of Tasks 1-2's position tracking).
+
+- [ ] **Step 9: Commit**
+
+```bash
+git add frontend/Wavely.App/Controls/PresetCatalog.cs frontend/Wavely.App/Views/Presets/CompactPresetView.axaml frontend/Wavely.App/Views/Presets/CompactPresetView.axaml.cs frontend/Wavely.App/Views/MainWindow.axaml frontend/Wavely.App/Views/MainWindow.axaml.cs frontend/Wavely.App/Views/MainWindow.Appearance.cs
+git commit -m "feat: add the runtime preset-switching engine and the Compact preset (Phase 7.1)"
+```
 
 ---
 
-### Task 8: `BoxyPresetView`
+### Task 7: `BoxyPresetView`
 
 **Files:**
 - Create: `frontend/Wavely.App/Views/Presets/BoxyPresetView.axaml`, `.axaml.cs`
+- Modify: `frontend/Wavely.App/Controls/PresetCatalog.cs` — append one entry.
 
 **Spec source:** `BoxyLayout.svelte`. Cover 92px/radius 12 next to a stacked info panel (title/artist) + meta panel (time/waveform(11)/time, row layout not column), full-width progress bar below both.
 
@@ -1089,14 +1156,36 @@ public partial class BoxyPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build** — expected to still fail (5 preset views remain). Continue.
+- [ ] **Step 3: Register it in `PresetCatalog`**
+
+In `PresetCatalog.cs`, append to `Entries` (after `"Compact"`):
+```csharp
+new("Boxy", new Size(340, 170), () => new Views.Presets.BoxyPresetView()),
+```
+
+- [ ] **Step 4: Build**
+
+Run: `.\build.ps1 -Configuration Debug`
+Expected: `Build complete (Debug).`
+
+- [ ] **Step 5: Run and verify**
+
+Run `Wavely.App.exe`, switch to Boxy in Settings → Apparence → Preset. Confirm the 340×170 layout renders (92px cover, stacked title/artist + time/waveform/time panels, full-width progress bar), updates live, and cover shape/glow/vinyl-spin still work.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/Wavely.App/Views/Presets/BoxyPresetView.axaml frontend/Wavely.App/Views/Presets/BoxyPresetView.axaml.cs frontend/Wavely.App/Controls/PresetCatalog.cs
+git commit -m "feat: add Boxy preset (Phase 7.2)"
+```
 
 ---
 
-### Task 9: `GalleryPresetView`
+### Task 8: `GalleryPresetView`
 
 **Files:**
 - Create: `frontend/Wavely.App/Views/Presets/GalleryPresetView.axaml`, `.axaml.cs`
+- Modify: `frontend/Wavely.App/Controls/PresetCatalog.cs` — append one entry.
 
 **Spec source:** `GalleryLayout.svelte`. Large square cover filling the width (radius 16), title/artist panel below, then a time-labels row + progress bar. **No waveform** (matches the reference — Gallery has no `EqualizerBars`).
 
@@ -1181,14 +1270,36 @@ public partial class GalleryPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build** — expected to still fail (4 preset views remain). Continue.
+- [ ] **Step 3: Register it in `PresetCatalog`**
+
+In `PresetCatalog.cs`, append to `Entries` (after `"Boxy"`):
+```csharp
+new("Gallery", new Size(240, 350), () => new Views.Presets.GalleryPresetView()),
+```
+
+- [ ] **Step 4: Build**
+
+Run: `.\build.ps1 -Configuration Debug`
+Expected: `Build complete (Debug).`
+
+- [ ] **Step 5: Run and verify**
+
+Run `Wavely.App.exe`, switch to Gallery. Confirm the 240×350 layout renders (large square cover, title/artist panel, time labels + progress bar below, no waveform), updates live.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/Wavely.App/Views/Presets/GalleryPresetView.axaml frontend/Wavely.App/Views/Presets/GalleryPresetView.axaml.cs frontend/Wavely.App/Controls/PresetCatalog.cs
+git commit -m "feat: add Gallery preset (Phase 7.3)"
+```
 
 ---
 
-### Task 10: `MinimalPresetView`
+### Task 9: `MinimalPresetView`
 
 **Files:**
 - Create: `frontend/Wavely.App/Views/Presets/MinimalPresetView.axaml`, `.axaml.cs`
+- Modify: `frontend/Wavely.App/Controls/PresetCatalog.cs` — append one entry.
 
 **Spec source:** `MinimalLayout.svelte`. A single pill: 34px cover, "Title • Artist" on one line (ellipsis), thin progress bar filling remaining width. No waveform, no separate panels.
 
@@ -1256,14 +1367,36 @@ public partial class MinimalPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build** — expected to still fail (3 preset views remain). Continue.
+- [ ] **Step 3: Register it in `PresetCatalog`**
+
+In `PresetCatalog.cs`, append to `Entries` (after `"Gallery"`):
+```csharp
+new("Minimal", new Size(300, 54), () => new Views.Presets.MinimalPresetView()),
+```
+
+- [ ] **Step 4: Build**
+
+Run: `.\build.ps1 -Configuration Debug`
+Expected: `Build complete (Debug).`
+
+- [ ] **Step 5: Run and verify**
+
+Run `Wavely.App.exe`, switch to Minimal. Confirm the 300×54 pill renders (34px cover, "Title • Artist" label, thin progress bar), updates live.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/Wavely.App/Views/Presets/MinimalPresetView.axaml frontend/Wavely.App/Views/Presets/MinimalPresetView.axaml.cs frontend/Wavely.App/Controls/PresetCatalog.cs
+git commit -m "feat: add Minimal preset (Phase 7.4)"
+```
 
 ---
 
-### Task 11: `MacosPresetView`
+### Task 10: `MacosPresetView`
 
 **Files:**
 - Create: `frontend/Wavely.App/Views/Presets/MacosPresetView.axaml`, `.axaml.cs`
+- Modify: `frontend/Wavely.App/Controls/PresetCatalog.cs` — append one entry.
 
 **Spec source:** `MacosLayout.svelte`. Titlebar with red/yellow/green traffic-light dots + a small waveform(4), accent-colored bottom border; content row below is cover (fit=height) + info column (title/artist/time-row/progress).
 
@@ -1354,14 +1487,36 @@ public partial class MacosPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build** — expected to still fail (2 preset views remain). Continue.
+- [ ] **Step 3: Register it in `PresetCatalog`**
+
+In `PresetCatalog.cs`, append to `Entries` (after `"Minimal"`):
+```csharp
+new("macOS", new Size(340, 122), () => new Views.Presets.MacosPresetView()),
+```
+
+- [ ] **Step 4: Build**
+
+Run: `.\build.ps1 -Configuration Debug`
+Expected: `Build complete (Debug).`
+
+- [ ] **Step 5: Run and verify**
+
+Run `Wavely.App.exe`, switch to macOS. Confirm the 340×122 layout renders (traffic-light dots, small waveform in the titlebar, accent-colored bottom border, cover + info column below), updates live.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/Wavely.App/Views/Presets/MacosPresetView.axaml frontend/Wavely.App/Views/Presets/MacosPresetView.axaml.cs frontend/Wavely.App/Controls/PresetCatalog.cs
+git commit -m "feat: add macOS preset (Phase 7.5)"
+```
 
 ---
 
-### Task 12: `ShellPresetView`
+### Task 11: `ShellPresetView`
 
 **Files:**
 - Create: `frontend/Wavely.App/Views/Presets/ShellPresetView.axaml`, `.axaml.cs`
+- Modify: `frontend/Wavely.App/Controls/PresetCatalog.cs` — append one entry.
 
 **Spec source:** `ShellLayout.svelte`. Terminal window chrome (title bar with "root@wavely" + `– ▢ ✕` controls), monospace body: a command line, `Title:`/`Artist:` rows, an ASCII `[####----]` bar (26 chars wide, ported literally per the reference's own `BAR_WIDTH`), and a `m:ss - m:ss` times line. **No separate `ProgressBarControl`/`CoverArtControl`** — the reference has no cover art or graphical progress bar at all here, it's pure text; that omission is the preset's whole visual identity, not a cut corner.
 
@@ -1457,14 +1612,36 @@ public partial class ShellPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build** — expected to still fail (1 preset view remains: Discord). Continue.
+- [ ] **Step 3: Register it in `PresetCatalog`**
+
+In `PresetCatalog.cs`, append to `Entries` (after `"macOS"`):
+```csharp
+new("Shell", new Size(360, 156), () => new Views.Presets.ShellPresetView()),
+```
+
+- [ ] **Step 4: Build**
+
+Run: `.\build.ps1 -Configuration Debug`
+Expected: `Build complete (Debug).`
+
+- [ ] **Step 5: Run and verify**
+
+Run `Wavely.App.exe`, switch to Shell. Confirm the 360×156 terminal card renders (title bar, command line, Title:/Artist: rows with real values, ASCII bar, times line), and the `#`/`-` split in the bar and the times line advance as playback progresses.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add frontend/Wavely.App/Views/Presets/ShellPresetView.axaml frontend/Wavely.App/Views/Presets/ShellPresetView.axaml.cs frontend/Wavely.App/Controls/PresetCatalog.cs
+git commit -m "feat: add Shell preset (Phase 7.6)"
+```
 
 ---
 
-### Task 13: `DiscordPresetView` (final preset — first full build)
+### Task 12: `DiscordPresetView` (final preset)
 
 **Files:**
 - Create: `frontend/Wavely.App/Views/Presets/DiscordPresetView.axaml`, `.axaml.cs`
+- Modify: `frontend/Wavely.App/Controls/PresetCatalog.cs` — append the final entry (7 of 7).
 
 **Spec source:** `DiscordLayout.svelte`. "Wavely" wordmark + waveform(4) header; cover (66px/radius 13) with a white "active" bar and a chrome pill below it, next to title/artist/progress-row-with-thumb. The reference's `.active-indicator` pokes outside the card's left edge via a negative `left: -23px` — reproduced with `Margin` instead of `Canvas`-style absolute positioning, since Avalonia's default panels don't support negative-offset overflow without `Canvas`; a small `Canvas` wraps just that one element.
 
@@ -1554,21 +1731,32 @@ public partial class DiscordPresetView : UserControl, Controls.IPresetView
 }
 ```
 
-- [ ] **Step 3: Build**
+- [ ] **Step 3: Register it in `PresetCatalog`**
+
+In `PresetCatalog.cs`, append to `Entries` (after `"Shell"` — this is the 7th and final entry):
+```csharp
+new("Discord", new Size(360, 146), () => new Views.Presets.DiscordPresetView()),
+```
+
+- [ ] **Step 4: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
-Expected: `Build complete (Debug).` — this is the first successful build since Task 4 (all 7 preset views now exist, `PresetCatalog` fully resolves, `MainWindow` compiles against `IPresetView`).
+Expected: `Build complete (Debug).`
 
-- [ ] **Step 4: Commit everything from Tasks 4-13 together**
+- [ ] **Step 5: Run and verify**
+
+Run `Wavely.App.exe`, switch to Discord. Confirm the 360×146 card renders: wordmark + small waveform header, cover with the white active-indicator bar poking out past the card's left edge (not clipped) and the chrome pill below it, title/artist, and a progress bar whose thumb sits at the fill's right edge and tracks it as playback advances.
+
+- [ ] **Step 6: Commit**
 
 ```bash
-git add frontend/Wavely.App/Controls/CoverArtControl.axaml frontend/Wavely.App/Controls/CoverArtControl.axaml.cs frontend/Wavely.App/Controls/IPresetView.cs frontend/Wavely.App/Controls/PresetCatalog.cs frontend/Wavely.App/Views/MainWindow.axaml frontend/Wavely.App/Views/MainWindow.axaml.cs frontend/Wavely.App/Views/MainWindow.Appearance.cs frontend/Wavely.App/Views/Presets/
-git commit -m "feat: implement the 7-preset rendering engine (Phase 7)"
+git add frontend/Wavely.App/Views/Presets/DiscordPresetView.axaml frontend/Wavely.App/Views/Presets/DiscordPresetView.axaml.cs frontend/Wavely.App/Controls/PresetCatalog.cs
+git commit -m "feat: add Discord preset, completing all 7 Phase 7 presets"
 ```
 
 ---
 
-### Task 14: Remove the "not yet available" caveat from Settings
+### Task 13: Remove the "not yet available" caveat from Settings
 
 **Files:**
 - Modify: `frontend/Wavely.App/Views/SettingsWindow.axaml`
@@ -1591,7 +1779,7 @@ git commit -m "chore: remove stale not-yet-available notice now that Phase 7 pre
 
 ---
 
-### Task 15: Full manual verification pass
+### Task 14: Full manual verification pass
 
 **No new files** — this task is pure verification, run with a real GSMTC session (Spotify), following the same screenshot-driven methodology already used for Phases 1-6 (UI Automation to drive the Settings preset ComboBox, screenshots to confirm each preset's rendering, real pause/resume to confirm vinyl-spin and progress-bar behavior carry over into every preset that has a `CoverArtControl`/`ProgressBarControl`).
 
@@ -1607,8 +1795,8 @@ git commit -m "chore: remove stale not-yet-available notice now that Phase 7 pre
 
 ## Plan Self-Review
 
-**Spec coverage:** All 7 presets (Compact, Boxy, Gallery, Minimal, macOS, Shell, Discord) → Tasks 7-13, each grounded in its own `*Layout.svelte` file and `layouts.ts`'s window size. Progress bar + time labels (present in every preset per the reference) → Tasks 1-3 (backend position + interpolation + shared control). Cover shape/glow/vinyl-spin (Phase 6, must survive into every preset) → Task 4's behavior-preserving extraction, consumed by every preset task except Shell (which has no cover in the reference). Generic runtime preset-switching (`PROMPT.md`'s explicit requirement) → Task 5 (`IPresetView`/`PresetCatalog`) + Task 6 (`MainWindow` wiring off `AppConfig.PresetIndex`, already persisted since Phase 4). Settings copy cleanup → Task 14.
+**Spec coverage:** All 7 presets (Compact, Boxy, Gallery, Minimal, macOS, Shell, Discord) → Task 6 (Compact, bundled with the engine) + Tasks 7-12 (the remaining six), each grounded in its own `*Layout.svelte` file and `layouts.ts`'s window size. Progress bar + time labels (present in every preset per the reference) → Tasks 1-3 (backend position + interpolation + shared control). Cover shape/glow/vinyl-spin (Phase 6, must survive into every preset) → Task 4's behavior-preserving extraction, consumed by every preset task except Shell (which has no cover in the reference). Generic runtime preset-switching (`PROMPT.md`'s explicit requirement) → Task 5 (`IPresetView`) + Task 6 (`PresetCatalog` + `MainWindow` wiring off `AppConfig.PresetIndex`, already persisted since Phase 4), grown by one `PresetCatalog` entry per preset task thereafter so every task stays independently buildable. Settings copy cleanup → Task 13.
 
 **Explicitly out of scope, by user confirmation:** `EqualizerBars.svelte`, `BlurBackdrop.svelte` verbatim ports (real `WaveformControl` and the existing Phase 6 blur mechanism are used instead — see Global Constraints).
 
-**Type/name consistency check:** `IPresetView`'s four methods (`UpdateTrack`, `UpdatePlayback`, `UpdateWaveform`, `ApplyColors`, `ApplyCoverAppearance`) match exactly across Task 5's declaration and all 7 implementations in Tasks 7-13. `PresetCatalog.Entries`/`PresetEntry`/`Resolve` (Task 5) match their only call site in Task 6. `CoverArtControl.SetSource/Shape/GlowEnabled/GlowColor/IsPlaying` (Task 4) match every preset's usage. `ProgressBarControl.Percent/AccentColor/ShowThumb` (Task 3) match every preset's usage (only Discord sets `ShowThumb`). `PlaybackPositionTracker.Tick`/`Sync`/`SetPlaying` (Task 2) match their only call sites in Task 6. `TrackInfo.PositionMs` (Task 1) matches `PlaybackPositionTracker.Sync`'s usage (Task 2).
+**Type/name consistency check:** `IPresetView`'s five methods (`UpdateTrack`, `UpdatePlayback`, `UpdateWaveform`, `ApplyColors`, `ApplyCoverAppearance`) match exactly across Task 5's declaration and all 7 implementations in Tasks 6-12. `PresetCatalog.Entries`/`PresetEntry`/`Resolve` (introduced in Task 6, grown by Tasks 7-12) match their only call site in Task 6's `MainWindow` wiring. `CoverArtControl.SetSource/Shape/GlowEnabled/GlowColor/IsPlaying` (Task 4) match every preset's usage. `ProgressBarControl.Percent/AccentColor/ShowThumb` (Task 3) match every preset's usage (only Discord sets `ShowThumb`). `PlaybackPositionTracker.Tick`/`Sync`/`SetPlaying` (Task 2) match their only call sites in Task 6. `TrackInfo.PositionMs` (Task 1) matches `PlaybackPositionTracker.Sync`'s usage (Task 2).
