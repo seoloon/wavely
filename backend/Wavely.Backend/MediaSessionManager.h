@@ -30,6 +30,8 @@ namespace winrt::Wavely::Backend::implementation
         void PlaybackStateChanged(winrt::event_token const& token) noexcept;
         winrt::event_token CoverArtReceived(winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Windows::Storage::Streams::IBuffer> const& handler);
         void CoverArtReceived(winrt::event_token const& token) noexcept;
+        winrt::event_token PositionChanged(winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, std::int64_t> const& handler);
+        void PositionChanged(winrt::event_token const& token) noexcept;
 
     private:
         winrt::fire_and_forget initializeAsync();
@@ -39,12 +41,14 @@ namespace winrt::Wavely::Backend::implementation
         void unsubscribeFromCurrentSession();
         void refreshPlaybackInfo();
         winrt::fire_and_forget refreshMediaPropertiesAsync();
+        void refreshTimelineProperties();
 
         winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager m_sessionManager{ nullptr };
         winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession m_currentSession{ nullptr };
         winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSessionManager::SessionsChanged_revoker m_sessionsChangedRevoker;
         winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession::MediaPropertiesChanged_revoker m_mediaPropertiesChangedRevoker;
         winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession::PlaybackInfoChanged_revoker m_playbackInfoChangedRevoker;
+        winrt::Windows::Media::Control::GlobalSystemMediaTransportControlsSession::TimelinePropertiesChanged_revoker m_timelinePropertiesChangedRevoker;
 
         winrt::Wavely::Backend::TrackInfo m_currentTrack{ winrt::make<TrackInfo>() };
         std::atomic<bool> m_started{ false };
@@ -53,6 +57,7 @@ namespace winrt::Wavely::Backend::implementation
         winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Wavely::Backend::TrackInfo>> m_trackChangedEvent;
         winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, bool>> m_playbackStateChangedEvent;
         winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, winrt::Windows::Storage::Streams::IBuffer>> m_coverArtReceivedEvent;
+        winrt::event<winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, std::int64_t>> m_positionChangedEvent;
     };
 }
 namespace winrt::Wavely::Backend::factory_implementation

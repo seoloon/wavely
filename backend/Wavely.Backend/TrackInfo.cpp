@@ -34,6 +34,11 @@ namespace winrt::Wavely::Backend::implementation
         return m_durationMs;
     }
 
+    std::int64_t TrackInfo::PositionMs()
+    {
+        return m_positionMs;
+    }
+
     bool TrackInfo::IsPlaying()
     {
         return m_isPlaying;
