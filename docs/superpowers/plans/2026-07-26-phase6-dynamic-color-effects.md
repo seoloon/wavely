@@ -1,6 +1,6 @@
 # Phase 6 (6.2-6.6) — Dynamic Color Binding & Visual Effects Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Bind the backend's already-shipped dominant-color extraction (Phase 6.1, commit `7a50339`) to the widget's visuals, and implement the four GPU visual effects (blurred background, glow, squircle, vinyl) that the Settings window's Appearance tab already persists but nothing renders yet.
 
@@ -41,7 +41,7 @@
 **Interfaces:**
 - Produces: `WidgetColorScheme` record (`Background`, `Accent`, `Glow` : `Avalonia.Media.Color`, `TextIsDark` : `bool`), `WidgetColorScheme.Default` (the pre-Phase-6 static look), `DynamicColorService.Resolve(Wavely.Backend.TrackInfo track) : WidgetColorScheme`.
 
-- [ ] **Step 1: Write the service**
+- [x] **Step 1: Write the service**
 
 ```csharp
 using System.Runtime.InteropServices;
@@ -116,12 +116,12 @@ public static class DynamicColorService
 }
 ```
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).` — this file has no callers yet, so a clean build is the only check possible at this step.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add frontend/Wavely.App/Services/DynamicColorService.cs
@@ -139,7 +139,7 @@ git commit -m "feat: add DynamicColorService to resolve per-track widget color s
 - Consumes: nothing new.
 - Produces: `WaveformControl.AccentColor` (`Avalonia.Media.Color`, get/set) — Task 3 sets this from `MainWindow`.
 
-- [ ] **Step 1: Replace the fixed brush with a settable accent color**
+- [x] **Step 1: Replace the fixed brush with a settable accent color**
 
 Replace the whole file with:
 
@@ -222,16 +222,16 @@ public sealed class WaveformControl : Control
 }
 ```
 
-- [ ] **Step 2: Build**
+- [x] **Step 2: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).`
 
-- [ ] **Step 3: Run and confirm no regression**
+- [x] **Step 3: Run and confirm no regression**
 
 Run `Wavely.App.exe` with a music app playing. Confirm the waveform still renders in its original blue — `AccentColor` defaults to the same color the old fixed brush used, so this step should be visually identical to before.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add frontend/Wavely.App/Controls/WaveformControl.cs
@@ -274,7 +274,7 @@ snippets — the amendment inside Task 4 corrects this.
 - Consumes: `DynamicColorService.Resolve(TrackInfo)`, `WidgetColorScheme`, `WaveformControl.AccentColor` (Tasks 1-2).
 - Produces: `MainWindow.ApplyDynamicColors(TrackInfo track)` — Task 5 extends this to also apply glow; `MainWindow._currentTrack` (`TrackInfo?`) — Task 4 reads this too. `BackgroundBorder.Background is SolidColorBrush` is the access pattern used *at this point in the plan* — there is no `BackgroundBrush` field. **Task 4 later restructures the XAML and renames the element that carries this brush to `BackgroundTintBorder`** — see Task 4's amendment; the cast target changes accordingly from that task onward.
 
-- [ ] **Step 1 (original text, superseded by the amendment above — kept for history): Name the background brush**
+- [x] **Step 1 (original text, superseded by the amendment above — kept for history): Name the background brush**
 
 In `MainWindow.axaml`, change:
 
@@ -294,7 +294,7 @@ to:
 
 **This step was not applied — see the amendment above. `MainWindow.axaml` has no changes from this task.**
 
-- [ ] **Step 2: Create the appearance partial-class file**
+- [x] **Step 2: Create the appearance partial-class file**
 
 Create `frontend/Wavely.App/Views/MainWindow.Appearance.cs`:
 
@@ -363,7 +363,7 @@ public partial class MainWindow
 
 (Partial classes share fields and named XAML elements across files, but each file needs its own `using` directives — the code block above already includes `using Wavely.Backend;` for `TrackInfo`.)
 
-- [ ] **Step 3: Remove `ApplyAppearance` from `MainWindow.axaml.cs` and wire the new call sites**
+- [x] **Step 3: Remove `ApplyAppearance` from `MainWindow.axaml.cs` and wire the new call sites**
 
 In `MainWindow.axaml.cs`, delete the existing `ApplyAppearance` method (currently right after `RefreshFromConfig`):
 
@@ -441,16 +441,16 @@ In `OnTrackChanged`, set `_currentTrack` and call `ApplyDynamicColors`:
     }
 ```
 
-- [ ] **Step 4: Build**
+- [x] **Step 4: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).`
 
-- [ ] **Step 5: Run and verify**
+- [x] **Step 5: Run and verify**
 
 Run `Wavely.App.exe` with a music app playing a track that has contrasting cover art. In Settings → Apparence, enable "Couleurs dynamiques" and "Fond dominante" (`DynamicColorsEnabled`/`DynamicBackgroundEnabled`). Confirm: the widget's background and waveform bars change to colors pulled from the current cover; switching tracks (different-colored cover) updates them again; toggling the settings back off reverts to the original dark background / blue waveform. Try a very light cover and confirm the title text switches to dark/black for legibility.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/Wavely.App/Views/MainWindow.axaml frontend/Wavely.App/Views/MainWindow.axaml.cs frontend/Wavely.App/Views/MainWindow.Appearance.cs
@@ -479,7 +479,7 @@ just the outer clipping/sizing container). The snippets below already reflect th
 final state. This does not reintroduce the "can't name a brush" constraint — `BackgroundTintBorder`
 names the `Border` (a `Control`, gets a generated field), not the `SolidColorBrush` inside it.
 
-- [ ] **Step 1: Restructure the XAML to add a blurred background layer**
+- [x] **Step 1: Restructure the XAML to add a blurred background layer**
 
 In `MainWindow.axaml`, replace:
 
@@ -524,7 +524,7 @@ with:
 
 (The inner `StackPanel`'s content - the `Grid` with cover/title/artist/status and the `WaveformControl` - is unchanged; only its ancestor wrapping changes, from one `Border` to `Border > Grid > (Image, Border > StackPanel)`.)
 
-- [ ] **Step 2: Add `ApplyBlurBackground` to `MainWindow.Appearance.cs`**
+- [x] **Step 2: Add `ApplyBlurBackground` to `MainWindow.Appearance.cs`**
 
 Add this constant near the top of the class and the method anywhere among the other `Apply*` methods:
 
@@ -544,7 +544,7 @@ Add this constant near the top of the class and the method anywhere among the ot
     }
 ```
 
-- [ ] **Step 3: Wire it up in `MainWindow.axaml.cs`**
+- [x] **Step 3: Wire it up in `MainWindow.axaml.cs`**
 
 **⚠️ Amendment (found by Task 4's implementer, confirmed by a successful build):** there is no
 `Avalonia.Media.Effects` namespace in this project's Avalonia 11.3.18 — `BlurEffect` lives
@@ -581,16 +581,16 @@ In `OnTrackChanged`, add a call right before `ApplyDynamicColors(track);`:
             ApplyDynamicColors(track);
 ```
 
-- [ ] **Step 4: Build**
+- [x] **Step 4: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).`
 
-- [ ] **Step 5: Run and verify**
+- [x] **Step 5: Run and verify**
 
 Run `Wavely.App.exe`, enable "Fond flouté" (`CoverBlurEnabled`) in Settings → Apparence. Confirm a blurred version of the current cover fills the widget's background, with the existing dark tint still on top for text legibility. Toggle it off and confirm the background reverts to the flat color from Task 3. Change tracks and confirm the blurred background updates too.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add frontend/Wavely.App/Views/MainWindow.axaml frontend/Wavely.App/Views/MainWindow.Appearance.cs frontend/Wavely.App/Views/MainWindow.axaml.cs
@@ -619,7 +619,7 @@ type/properties; a symmetric halo (no directional offset) is `Direction = 0.0, S
 - Consumes: `_config.CoverGlowEnabled`, `WidgetColorScheme.Glow`/`WidgetColorScheme.Default.Glow`.
 - Produces: `MainWindow.ApplyGlow(Color glowColor)`.
 
-- [ ] **Step 1: Add the glow constants and method**
+- [x] **Step 1: Add the glow constants and method**
 
 Add near `BackgroundBlurRadius`:
 
@@ -653,7 +653,7 @@ Add near `BackgroundBlurRadius`:
 
 (`DropShadowDirectionEffect` resolves via the file's existing `using Avalonia.Media;`.)
 
-- [ ] **Step 2: Call it from `ApplyDynamicColors`**
+- [x] **Step 2: Call it from `ApplyDynamicColors`**
 
 In `ApplyDynamicColors`, add as the last line:
 
@@ -661,16 +661,16 @@ In `ApplyDynamicColors`, add as the last line:
         ApplyGlow(_config.DynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow);
 ```
 
-- [ ] **Step 3: Build**
+- [x] **Step 3: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).`
 
-- [ ] **Step 4: Run and verify**
+- [x] **Step 4: Run and verify**
 
 Run `Wavely.App.exe`, enable "Glow" (`CoverGlowEnabled`) in Settings → Apparence with dynamic colors off - confirm a white halo appears around the cover. Enable dynamic colors too - confirm the glow recolors to match the cover's palette and changes with the track. Disable glow - confirm it disappears (`CoverBorder.Effect` back to null).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/Wavely.App/Views/MainWindow.Appearance.cs
@@ -693,7 +693,7 @@ git commit -m "feat: add cover glow effect (Phase 6.4)"
 
 At this point the Vinyl case only clips the cover into a circle and shows the spindle overlay - it doesn't spin yet (Task 7 adds that). This is a complete, independently valid state (a static vinyl-shaped cover), not a stub.
 
-- [ ] **Step 1: Write the squircle geometry builder**
+- [x] **Step 1: Write the squircle geometry builder**
 
 Create `frontend/Wavely.App/Core/SquircleGeometry.cs`:
 
@@ -760,7 +760,7 @@ public static class SquircleGeometry
 }
 ```
 
-- [ ] **Step 2: Restructure the cover markup in `MainWindow.axaml`**
+- [x] **Step 2: Restructure the cover markup in `MainWindow.axaml`**
 
 Replace:
 
@@ -785,7 +785,7 @@ with:
                 </Border>
 ```
 
-- [ ] **Step 3: Add `ApplyCoverShape` to `MainWindow.Appearance.cs`**
+- [x] **Step 3: Add `ApplyCoverShape` to `MainWindow.Appearance.cs`**
 
 Add `using Wavely.App.Core;` to the file's usings, then the constant and method:
 
@@ -825,7 +825,7 @@ Add `using Wavely.App.Core;` to the file's usings, then the constant and method:
     }
 ```
 
-- [ ] **Step 4: Call it from `ApplyVisualScale` in `MainWindow.axaml.cs`**
+- [x] **Step 4: Call it from `ApplyVisualScale` in `MainWindow.axaml.cs`**
 
 `ApplyCoverShape` needs `CoverBorder.Width` to already reflect the current scale, and must re-run whenever scale changes (squircle/vinyl clip size depends on it) - so it belongs at the end of `ApplyVisualScale`, not as a separate call site:
 
@@ -841,16 +841,16 @@ Add `using Wavely.App.Core;` to the file's usings, then the constant and method:
     }
 ```
 
-- [ ] **Step 5: Build**
+- [x] **Step 5: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).`
 
-- [ ] **Step 6: Run and verify**
+- [x] **Step 6: Run and verify**
 
 Run `Wavely.App.exe`. In Settings → Apparence, cycle "Style pochette" through Carré/Squircle/Vinyle (`CoverShape`). Confirm: Carré looks identical to before (rounded-rect, unchanged); Squircle shows a distinctly superellipse-shaped cover (rounder than the square, not a circle); Vinyle shows a circular cover with a small dark spindle dot centered on top (not yet spinning). Resize the widget (mouse wheel) in each shape and confirm the clip scales correctly with no stretching/clipping artifacts.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add frontend/Wavely.App/Core/SquircleGeometry.cs frontend/Wavely.App/Views/MainWindow.axaml frontend/Wavely.App/Views/MainWindow.Appearance.cs frontend/Wavely.App/Views/MainWindow.axaml.cs
@@ -869,7 +869,7 @@ git commit -m "feat: add squircle and vinyl cover shapes (Phase 6.5)"
 - Consumes: `CoverRotateTransform` (named element from Task 6), `_config.CoverShape`.
 - Produces: nothing further consumed by later tasks (this is the last task in the plan).
 
-- [ ] **Step 1: Add the rotation timer and state method to `MainWindow.Appearance.cs`**
+- [x] **Step 1: Add the rotation timer and state method to `MainWindow.Appearance.cs`**
 
 Add the constant:
 
@@ -912,7 +912,7 @@ Call it at the end of `ApplyCoverShape` (added in Task 6), right after the `swit
     }
 ```
 
-- [ ] **Step 2: Add the timer field and `_isPlaying` field in `MainWindow.axaml.cs`, initialize the timer, wire playback state**
+- [x] **Step 2: Add the timer field and `_isPlaying` field in `MainWindow.axaml.cs`, initialize the timer, wire playback state**
 
 Add fields next to `_hideAfterFadeTimer`:
 
@@ -951,16 +951,16 @@ In `OnPlaybackStateChanged`, record `_isPlaying` and update rotation state - add
             // ... rest of the existing method body is unchanged ...
 ```
 
-- [ ] **Step 3: Build**
+- [x] **Step 3: Build**
 
 Run: `.\build.ps1 -Configuration Debug`
 Expected: `Build complete (Debug).`
 
-- [ ] **Step 4: Run and verify**
+- [x] **Step 4: Run and verify**
 
 Run `Wavely.App.exe` with `CoverShape` set to Vinyle. Play music - confirm the cover spins continuously (~4s per rotation). Pause - confirm it stops immediately, holding its current angle (not snapping to 0°). Resume - confirm it continues spinning from that same angle. Switch to Squircle/Carré while playing - confirm rotation stops and doesn't resume even though playback continues (only Vinyl spins).
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add frontend/Wavely.App/Views/MainWindow.Appearance.cs frontend/Wavely.App/Views/MainWindow.axaml.cs
