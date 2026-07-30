@@ -18,6 +18,7 @@ public static class PresetCatalog
         new("Boxy", new Size(340, 170), () => new Views.Presets.BoxyPresetView()),
         new("Gallery", new Size(240, 350), () => new Views.Presets.GalleryPresetView()),
         new("Minimal", new Size(300, 54), () => new Views.Presets.MinimalPresetView()),
+        new("macOS", new Size(340, 122), () => new Views.Presets.MacosPresetView()),
     ];
 
     public static PresetEntry Resolve(int index) =>
