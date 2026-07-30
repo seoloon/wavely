@@ -17,6 +17,7 @@ public static class PresetCatalog
         new("Compact", new Size(360, 110), () => new Views.Presets.CompactPresetView()),
         new("Boxy", new Size(340, 170), () => new Views.Presets.BoxyPresetView()),
         new("Gallery", new Size(240, 350), () => new Views.Presets.GalleryPresetView()),
+        new("Minimal", new Size(300, 54), () => new Views.Presets.MinimalPresetView()),
     ];
 
     public static PresetEntry Resolve(int index) =>
