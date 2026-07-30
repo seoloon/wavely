@@ -1,4 +1,3 @@
-using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Wavely.App.Services;
@@ -7,10 +6,13 @@ using Wavely.Backend;
 namespace Wavely.App.ViewModels;
 
 /// <summary>
-/// Backs the "Comportement" tab of the Settings window. Every property setter writes straight
-/// through to the shared backend AppConfig (RULES.md SS5: save on every change, not just on
-/// close) and raises <see cref="ConfigChanged"/> so the live overlay widget and tray icon -
-/// which don't share this ViewModel - can re-read state that needs an immediate visual update.
+/// Backs the Settings window. Every property setter writes straight through to the shared backend
+/// AppConfig (RULES.md SS5: save on every change, not just on close) and raises
+/// <see cref="ConfigChanged"/> so the live overlay widget and tray icon - which don't share this
+/// ViewModel - can re-read state that needs an immediate visual update. This file owns the
+/// "Comportement" tab plus the constructor (which initializes both tabs) and the footer commands;
+/// the "Apparence" tab lives in the sibling <c>SettingsViewModel.Appearance.cs</c> partial-class
+/// file - see that file's doc comment for why it's split out (RULES.md's ~200-line guidance).
 /// </summary>
 public partial class SettingsViewModel : ObservableObject
 {
@@ -34,52 +36,6 @@ public partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _launchAtStartup;
-
-    /// <summary>Index into <see cref="PresetNames"/> (Compact, Boxy, Gallery, Minimal, macOS,
-    /// Shell, Discord - see assets/presets_reference). Persisted; the layouts themselves are
-    /// Phase 7 work, not yet rendered by MainWindow.</summary>
-    [ObservableProperty]
-    private int _presetIndex;
-
-    /// <summary>Index into <see cref="CoverShapeNames"/>, matching the CoverStyle enum ordinal
-    /// (Square, Squircle, Vinyl). Persisted; cover shape rendering is Phase 6/7 work.</summary>
-    [ObservableProperty]
-    private int _coverShapeIndex;
-
-    [ObservableProperty]
-    private bool _coverGlowEnabled;
-
-    [ObservableProperty]
-    private bool _coverBlurEnabled;
-
-    [ObservableProperty]
-    private bool _dynamicColorsEnabled;
-
-    [ObservableProperty]
-    private bool _dynamicBackgroundEnabled;
-
-    /// <summary>The fallback accent color used everywhere <c>WidgetColorScheme.Default.Accent</c>
-    /// is referenced, when dynamic colors is off. Persisted via <c>AppConfig.CustomAccentColor</c>
-    /// (packed 0xAARRGGBB); see <see cref="DynamicColorService.PackColor"/>/<see cref="DynamicColorService.UnpackColor"/>.</summary>
-    [ObservableProperty]
-    private Color _customAccentColor;
-
-    /// <summary>0-100 for slider display; converted to/from AppConfig's 0.0-1.0 range.</summary>
-    [ObservableProperty]
-    private double _backgroundOpacityPercent;
-
-    /// <summary>Index into <see cref="ThemeNames"/>, matching the ThemeMode enum ordinal
-    /// (Dark, Light).</summary>
-    [ObservableProperty]
-    private int _themeIndex;
-
-    public static IReadOnlyList<string> PresetNames { get; } =
-        ["Compact", "Boxy", "Gallery", "Minimal", "macOS", "Shell", "Discord"];
-
-    public static IReadOnlyList<string> CoverShapeNames { get; } =
-        ["Carré", "Squircle", "Vinyle"];
-
-    public static IReadOnlyList<string> ThemeNames { get; } = ["Sombre", "Clair"];
 
     public SettingsViewModel(AppConfig config, MediaSessionManager sessionManager)
     {
@@ -154,114 +110,6 @@ public partial class SettingsViewModel : ObservableObject
         _config.SetLaunchAtStartup(value);
         ConfigChanged?.Invoke(this, EventArgs.Empty);
     }
-
-    partial void OnPresetIndexChanged(int value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetPresetIndex(value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnCoverShapeIndexChanged(int value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetCoverShape((CoverStyle)value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnCoverGlowEnabledChanged(bool value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetCoverGlowEnabled(value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnCoverBlurEnabledChanged(bool value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetCoverBlurEnabled(value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnDynamicColorsEnabledChanged(bool value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetDynamicColorsEnabled(value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnDynamicBackgroundEnabledChanged(bool value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetDynamicBackgroundEnabled(value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnCustomAccentColorChanged(Color value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetCustomAccentColor(DynamicColorService.PackColor(value));
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnBackgroundOpacityPercentChanged(double value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetBackgroundOpacity(value / 100.0);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    partial void OnThemeIndexChanged(int value)
-    {
-        if (_isLoading)
-        {
-            return;
-        }
-        _config.SetTheme((ThemeMode)value);
-        ConfigChanged?.Invoke(this, EventArgs.Empty);
-    }
-
-    [RelayCommand]
-    private void SelectSpotifyAccent() => CustomAccentColor = Color.Parse("#1DB954");
-
-    [RelayCommand]
-    private void SelectDeezerAccent() => CustomAccentColor = Color.Parse("#A238FF");
-
-    [RelayCommand]
-    private void SelectAppleMusicAccent() => CustomAccentColor = Color.Parse("#FA243C");
-
-    [RelayCommand]
-    private void SelectYouTubeAccent() => CustomAccentColor = Color.Parse("#FF0000");
-
-    [RelayCommand]
-    private void SelectBlackAccent() => CustomAccentColor = Colors.Black;
-
-    [RelayCommand]
-    private void SelectWhiteAccent() => CustomAccentColor = Colors.White;
 
     [RelayCommand]
     private void ResetSize()
