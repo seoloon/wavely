@@ -23,6 +23,7 @@ public sealed class WaveformControl : Control
     private float[] _bands = [];
     private Color _accentColor = DefaultAccentColor;
     private IBrush _barBrush = new SolidColorBrush(DefaultAccentColor);
+    private int _displayBarCount;
 
     /// <summary>Bar fill color. Defaults to the static blue accent; overridden by Phase 6's
     /// dynamic-color binding (<see cref="Wavely.App.Services.DynamicColorService"/>) when the
@@ -38,13 +39,44 @@ public sealed class WaveformControl : Control
         }
     }
 
+    /// <summary>Number of visual bars to render, grouping/averaging the real backend bands down to
+    /// this count when it's smaller than what's supplied. 0 (default) renders every band as-is.
+    /// Each preset sets this once, in its constructor, to match its own design's intended bar count
+    /// (e.g. Compact=5, Boxy=11, macOS=4, Discord=4, per assets/presets_reference/layouts/*.svelte's
+    /// own EqualizerBars count={N}) - the underlying data is still the real FFT output either way.</summary>
+    public int DisplayBarCount
+    {
+        get => _displayBarCount;
+        set => _displayBarCount = value;
+    }
+
     public void UpdateBands(ReadOnlySpan<float> bands)
     {
-        if (_bands.Length != bands.Length)
+        var targetCount = _displayBarCount > 0 ? Math.Min(_displayBarCount, bands.Length) : bands.Length;
+        if (_bands.Length != targetCount)
         {
-            _bands = new float[bands.Length];
+            _bands = new float[targetCount];
         }
-        bands.CopyTo(_bands);
+        if (targetCount == bands.Length)
+        {
+            bands.CopyTo(_bands);
+        }
+        else
+        {
+            for (var i = 0; i < targetCount; i++)
+            {
+                var start = i * bands.Length / targetCount;
+                var end = Math.Max(start + 1, (i + 1) * bands.Length / targetCount);
+                var sum = 0f;
+                var count = 0;
+                for (var j = start; j < end && j < bands.Length; j++)
+                {
+                    sum += bands[j];
+                    count++;
+                }
+                _bands[i] = count > 0 ? sum / count : 0f;
+            }
+        }
         InvalidateVisual();
     }
 

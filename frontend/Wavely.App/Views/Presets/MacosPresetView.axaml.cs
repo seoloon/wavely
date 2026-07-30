@@ -10,12 +10,18 @@ namespace Wavely.App.Views.Presets;
 
 public partial class MacosPresetView : UserControl, Controls.IPresetView
 {
+    private const int WaveformBarCount = 4;
+
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
     private static readonly IBrush LightArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0xFF, 0xFF, 0xFF));
     private static readonly IBrush DarkArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0x00, 0x00, 0x00));
 
-    public MacosPresetView() => InitializeComponent();
+    public MacosPresetView()
+    {
+        InitializeComponent();
+        Waveform.DisplayBarCount = WaveformBarCount;
+    }
 
     public void UpdateTrack(TrackInfo track)
     {
