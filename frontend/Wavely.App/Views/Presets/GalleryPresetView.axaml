@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Wavely.App.Controls"
+             x:Class="Wavely.App.Views.Presets.GalleryPresetView">
+    <StackPanel Spacing="8">
+        <controls:CoverArtControl x:Name="Cover" HorizontalAlignment="Stretch" Height="208" />
+        <Border Background="#1AFFFFFF" CornerRadius="10" Padding="14,8">
+            <StackPanel Spacing="3">
+                <TextBlock x:Name="TitleText" FontWeight="Bold" FontSize="14" Foreground="White" TextTrimming="CharacterEllipsis" />
+                <TextBlock x:Name="ArtistText" FontSize="12" Foreground="#B4FFFFFF" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+        </Border>
+        <Border Background="#1AFFFFFF" CornerRadius="10" Padding="14,8">
+            <StackPanel Spacing="6">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock x:Name="PositionText" Grid.Column="0" FontSize="11" FontWeight="Bold" Foreground="White" />
+                    <TextBlock x:Name="DurationText" Grid.Column="1" FontSize="11" FontWeight="Bold" Foreground="White" />
+                </Grid>
+                <controls:ProgressBarControl x:Name="Progress" Height="7" />
+            </StackPanel>
+        </Border>
+    </StackPanel>
+</UserControl>
