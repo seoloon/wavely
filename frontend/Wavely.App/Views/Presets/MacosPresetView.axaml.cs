@@ -66,5 +66,7 @@ public partial class MacosPresetView : UserControl, Controls.IPresetView
         BlurredCoverImage.IsVisible = enabled && blurredCover is not null;
     }
 
+    public bool HasOwnBlurredBackground => true;
+
     private static string Format(TimeSpan value) => value.ToString(@"m\:ss");
 }

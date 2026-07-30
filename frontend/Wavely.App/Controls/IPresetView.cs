@@ -21,4 +21,11 @@ public interface IPresetView
     /// Default no-op body so the other presets, which rely solely on the window-level shared
     /// blur behind their own translucent/opaque chrome, don't need any change.</summary>
     void ApplyBlurredBackground(Avalonia.Media.Imaging.Bitmap? blurredCover, bool enabled) { }
+
+    /// <summary>True when the preset hosts its own dedicated blurred-cover background layer
+    /// (see <see cref="ApplyBlurredBackground"/>), so MainWindow should suppress its shared
+    /// window-level blur entirely - including in any outer margin/gutter around the preset's
+    /// own chrome - rather than let two differently-cropped blurred renderings show at once
+    /// (see Task 24). Defaults to false for the other 5 presets, which need no change.</summary>
+    bool HasOwnBlurredBackground => false;
 }

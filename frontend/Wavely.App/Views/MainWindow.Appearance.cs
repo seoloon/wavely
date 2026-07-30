@@ -76,7 +76,7 @@ public partial class MainWindow
             bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
         }
         BlurBackgroundImage.Source = bitmap;
-        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && bitmap is not null;
+        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && bitmap is not null && !_activePreset.HasOwnBlurredBackground;
         _activePreset.ApplyBlurredBackground(bitmap, _config.CoverBlurEnabled);
     }
 }
