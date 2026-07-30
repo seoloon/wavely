@@ -28,7 +28,6 @@ internal static class Strings
     public static string SettingsBehaviorHideOnPauseDelayLabel => Get("Settings_Behavior_HideOnPauseDelay_Label");
     public static string SettingsBehaviorLaunchAtStartupLabel => Get("Settings_Behavior_LaunchAtStartup_Label");
     public static string SettingsBehaviorLanguageLabel => Get("Settings_Behavior_Language_Label");
-    public static string SettingsAppearanceNotYetAvailable => Get("Settings_Appearance_NotYetAvailable");
     public static string SettingsAppearancePresetLabel => Get("Settings_Appearance_Preset_Label");
     public static string SettingsAppearanceCoverShapeLabel => Get("Settings_Appearance_CoverShape_Label");
     public static string SettingsAppearanceGlowLabel => Get("Settings_Appearance_Glow_Label");

@@ -89,9 +89,6 @@
   <data name="Settings_Behavior_Language_Label" xml:space="preserve">
     <value>Langue</value>
   </data>
-  <data name="Settings_Appearance_NotYetAvailable" xml:space="preserve">
-    <value>Le rendu visuel de ces réglages arrive dans une prochaine phase (extraction de couleurs, flou, presets). Les choix ci-dessous sont déjà enregistrés.</value>
-  </data>
   <data name="Settings_Appearance_Preset_Label" xml:space="preserve">
     <value>Preset</value>
   </data>

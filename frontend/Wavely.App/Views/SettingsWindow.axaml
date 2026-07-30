@@ -41,8 +41,6 @@
             <TabItem Header="{x:Static res:Strings.SettingsTabAppearance}">
                 <ScrollViewer>
                 <StackPanel Margin="12" Spacing="16">
-                    <TextBlock Text="{x:Static res:Strings.SettingsAppearanceNotYetAvailable}" TextWrapping="Wrap" Opacity="0.7" FontSize="11" />
-
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearancePresetLabel}" />
                         <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.PresetNames}" SelectedIndex="{Binding PresetIndex}" HorizontalAlignment="Left" MinWidth="160" />
