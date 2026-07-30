@@ -3,7 +3,7 @@
              xmlns:controls="using:Wavely.App.Controls"
              x:Class="Wavely.App.Views.Presets.DiscordPresetView">
     <Grid>
-        <Border Background="#2B2D31" CornerRadius="16" Margin="8,0,0,0" Padding="16,10,16,10" ClipToBounds="True">
+        <Border Background="#2B2D31" CornerRadius="16" Margin="8,0,0,0" Padding="20,10,16,10" ClipToBounds="True">
             <StackPanel Spacing="8">
                 <Grid ColumnDefinitions="*,Auto" Height="26">
                     <TextBlock Grid.Column="0" Text="Wavely" FontWeight="Black" FontSize="20" Foreground="#DBDEE1" />

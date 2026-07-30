@@ -18,7 +18,7 @@
     <Border x:Name="BackgroundBorder" CornerRadius="16" ClipToBounds="True">
         <Grid>
             <Image x:Name="BlurBackgroundImage" Stretch="UniformToFill" IsVisible="False" />
-            <Border x:Name="BackgroundTintBorder" Padding="16">
+            <Border x:Name="BackgroundTintBorder" Padding="0">
                 <Border.Background>
                     <SolidColorBrush Color="#141418" Opacity="0.7" />
                 </Border.Background>
