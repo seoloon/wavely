@@ -4,7 +4,6 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media;
 using Avalonia.Threading;
 using Wavely.App.Controls;
 using Wavely.App.Services;
@@ -44,12 +43,10 @@ public partial class MainWindow : Window
     private TrackInfo? _currentTrack;
     private IPresetView _activePreset = null!;
     private Avalonia.Size _presetBaseSize;
-    private readonly ScaleTransform _presetScaleTransform;
 
     public MainWindow(AppConfig config, MediaSessionManager sessionManager, WaveformEngine waveformEngine)
     {
         InitializeComponent();
-        _presetScaleTransform = (ScaleTransform)PresetHost.RenderTransform!;
 
         _config = config;
         _sessionManager = sessionManager;
@@ -196,8 +193,6 @@ public partial class MainWindow : Window
         Height = _presetBaseSize.Height * scale;
         PresetHost.Width = _presetBaseSize.Width;
         PresetHost.Height = _presetBaseSize.Height;
-        _presetScaleTransform.ScaleX = scale;
-        _presetScaleTransform.ScaleY = scale;
     }
 
     /// <summary>Re-applies state that the Settings window may have changed on the shared
