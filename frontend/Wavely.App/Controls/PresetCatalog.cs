@@ -15,6 +15,7 @@ public static class PresetCatalog
     public static IReadOnlyList<PresetEntry> Entries { get; } =
     [
         new("Compact", new Size(360, 110), () => new Views.Presets.CompactPresetView()),
+        new("Boxy", new Size(340, 170), () => new Views.Presets.BoxyPresetView()),
     ];
 
     public static PresetEntry Resolve(int index) =>
