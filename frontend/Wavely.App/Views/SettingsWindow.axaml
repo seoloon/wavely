@@ -57,6 +57,19 @@
                     <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicColorsLabel}" IsChecked="{Binding DynamicColorsEnabled}" />
                     <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicBackgroundLabel}" IsChecked="{Binding DynamicBackgroundEnabled}" IsEnabled="{Binding DynamicColorsEnabled}" Margin="20,0,0,0" />
 
+                    <StackPanel Spacing="6" IsVisible="{Binding !DynamicColorsEnabled}" Margin="20,0,0,0">
+                        <TextBlock Text="{x:Static res:Strings.SettingsAppearanceCustomAccentColorLabel}" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#1DB954" Command="{Binding SelectSpotifyAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#A238FF" Command="{Binding SelectDeezerAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FA243C" Command="{Binding SelectAppleMusicAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FF0000" Command="{Binding SelectYouTubeAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#000000" Command="{Binding SelectBlackAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FFFFFF" Command="{Binding SelectWhiteAccentCommand}" />
+                        </StackPanel>
+                        <ColorPicker Color="{Binding CustomAccentColor}" HorizontalAlignment="Left" />
+                    </StackPanel>
+
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearanceOpacityLabel}" />
                         <Slider Minimum="0" Maximum="100" Value="{Binding BackgroundOpacityPercent}" />

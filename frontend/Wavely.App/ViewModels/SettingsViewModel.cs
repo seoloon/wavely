@@ -1,5 +1,7 @@
+using Avalonia.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Wavely.App.Services;
 using Wavely.Backend;
 
 namespace Wavely.App.ViewModels;
@@ -56,6 +58,12 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _dynamicBackgroundEnabled;
 
+    /// <summary>The fallback accent color used everywhere <c>WidgetColorScheme.Default.Accent</c>
+    /// is referenced, when dynamic colors is off. Persisted via <c>AppConfig.CustomAccentColor</c>
+    /// (packed 0xAARRGGBB); see <see cref="DynamicColorService.PackColor"/>/<see cref="DynamicColorService.UnpackColor"/>.</summary>
+    [ObservableProperty]
+    private Color _customAccentColor;
+
     /// <summary>0-100 for slider display; converted to/from AppConfig's 0.0-1.0 range.</summary>
     [ObservableProperty]
     private double _backgroundOpacityPercent;
@@ -90,6 +98,7 @@ public partial class SettingsViewModel : ObservableObject
         CoverBlurEnabled = _config.CoverBlurEnabled;
         DynamicColorsEnabled = _config.DynamicColorsEnabled;
         DynamicBackgroundEnabled = _config.DynamicBackgroundEnabled;
+        CustomAccentColor = DynamicColorService.UnpackColor(_config.CustomAccentColor);
         BackgroundOpacityPercent = _config.BackgroundOpacity * 100.0;
         ThemeIndex = (int)_config.Theme;
         _isLoading = false;
@@ -206,6 +215,16 @@ public partial class SettingsViewModel : ObservableObject
         ConfigChanged?.Invoke(this, EventArgs.Empty);
     }
 
+    partial void OnCustomAccentColorChanged(Color value)
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+        _config.SetCustomAccentColor(DynamicColorService.PackColor(value));
+        ConfigChanged?.Invoke(this, EventArgs.Empty);
+    }
+
     partial void OnBackgroundOpacityPercentChanged(double value)
     {
         if (_isLoading)
@@ -225,6 +244,24 @@ public partial class SettingsViewModel : ObservableObject
         _config.SetTheme((ThemeMode)value);
         ConfigChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    [RelayCommand]
+    private void SelectSpotifyAccent() => CustomAccentColor = Color.Parse("#1DB954");
+
+    [RelayCommand]
+    private void SelectDeezerAccent() => CustomAccentColor = Color.Parse("#A238FF");
+
+    [RelayCommand]
+    private void SelectAppleMusicAccent() => CustomAccentColor = Color.Parse("#FA243C");
+
+    [RelayCommand]
+    private void SelectYouTubeAccent() => CustomAccentColor = Color.Parse("#FF0000");
+
+    [RelayCommand]
+    private void SelectBlackAccent() => CustomAccentColor = Colors.Black;
+
+    [RelayCommand]
+    private void SelectWhiteAccent() => CustomAccentColor = Colors.White;
 
     [RelayCommand]
     private void ResetSize()

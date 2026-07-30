@@ -30,6 +30,8 @@ public partial class MainWindow
             backgroundBrush.Opacity = _config.BackgroundOpacity;
         }
 
+        WidgetColorScheme.SetCustomAccent(DynamicColorService.UnpackColor(_config.CustomAccentColor));
+
         if (Application.Current is { } app)
         {
             app.RequestedThemeVariant = _config.Theme == ThemeMode.Dark

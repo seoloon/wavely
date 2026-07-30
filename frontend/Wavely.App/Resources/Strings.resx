@@ -104,6 +104,9 @@
   <data name="Settings_Appearance_DynamicBackground_Label" xml:space="preserve">
     <value>Fond couleur dominante</value>
   </data>
+  <data name="Settings_Appearance_CustomAccentColor_Label" xml:space="preserve">
+    <value>Couleur d'accent personnalisée</value>
+  </data>
   <data name="Settings_Appearance_BlurredCover_Label" xml:space="preserve">
     <value>Fond pochette floutée</value>
   </data>

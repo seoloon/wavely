@@ -11,15 +11,24 @@ namespace Wavely.App.Services;
 /// docs/superpowers/specs/2026-07-26-phase6-dynamic-color-effects-design.md.</summary>
 public sealed record WidgetColorScheme(Color Background, Color Accent, Color Glow, bool TextIsDark)
 {
-    /// <summary>The look from before Phase 6: fixed dark background, blue waveform accent, white
-    /// text, white glow. Used whenever there's no cover or its palette couldn't be decoded -
-    /// callers additionally fall back to this per-element when the user has a dynamic-color
-    /// toggle turned off.</summary>
-    public static readonly WidgetColorScheme Default = new(
+    private static Color _customAccent = Color.FromArgb(220, 90, 170, 255);
+
+    /// <summary>The look from before Phase 6: fixed dark background, blue waveform accent (or the
+    /// user's custom accent color if they've set one via Settings - see <see cref="SetCustomAccent"/>),
+    /// white text, white glow. Used whenever there's no cover or its palette couldn't be decoded -
+    /// callers additionally fall back to this per-element when the user has a dynamic-color toggle
+    /// turned off.</summary>
+    public static WidgetColorScheme Default => new(
         Background: Color.FromRgb(0x14, 0x14, 0x18),
-        Accent: Color.FromArgb(220, 90, 170, 255),
+        Accent: _customAccent,
         Glow: Colors.White,
         TextIsDark: false);
+
+    /// <summary>Updates the fallback accent color returned by <see cref="Default"/> - called by
+    /// MainWindow whenever AppConfig.CustomAccentColor changes, so every preset's existing
+    /// `WidgetColorScheme.Default.Accent` reference picks up the user's choice with zero changes to
+    /// any preset file.</summary>
+    public static void SetCustomAccent(Color accent) => _customAccent = accent;
 }
 
 /// <summary>Turns a track's backend-extracted <see cref="TrackInfo.DominantColors"/> into a
@@ -62,11 +71,21 @@ public static class DynamicColorService
         var colors = new Color[packed.Length];
         for (var i = 0; i < packed.Length; i++)
         {
-            var argb = packed[i];
-            colors[i] = Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
+            colors[i] = UnpackColor(packed[i]);
         }
         return colors;
     }
+
+    /// <summary>Unpacks a single 0xAARRGGBB packed value (as used by both the backend's
+    /// ColorExtractor and <see cref="Wavely.Backend.AppConfig.CustomAccentColor"/>) into an
+    /// Avalonia <see cref="Color"/>.</summary>
+    public static Color UnpackColor(uint argb) =>
+        Color.FromArgb((byte)(argb >> 24), (byte)(argb >> 16), (byte)(argb >> 8), (byte)argb);
+
+    /// <summary>Packs an Avalonia <see cref="Color"/> back into the 0xAARRGGBB representation
+    /// used by <see cref="Wavely.Backend.AppConfig.SetCustomAccentColor"/>.</summary>
+    public static uint PackColor(Color color) =>
+        ((uint)color.A << 24) | ((uint)color.R << 16) | ((uint)color.G << 8) | color.B;
 
     private static double RelativeLuminance(Color color) =>
         (0.2126 * color.R + 0.7152 * color.G + 0.0722 * color.B) / 255.0;

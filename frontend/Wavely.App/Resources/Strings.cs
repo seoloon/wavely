@@ -33,6 +33,7 @@ internal static class Strings
     public static string SettingsAppearanceGlowLabel => Get("Settings_Appearance_Glow_Label");
     public static string SettingsAppearanceDynamicColorsLabel => Get("Settings_Appearance_DynamicColors_Label");
     public static string SettingsAppearanceDynamicBackgroundLabel => Get("Settings_Appearance_DynamicBackground_Label");
+    public static string SettingsAppearanceCustomAccentColorLabel => Get("Settings_Appearance_CustomAccentColor_Label");
     public static string SettingsAppearanceBlurredCoverLabel => Get("Settings_Appearance_BlurredCover_Label");
     public static string SettingsAppearanceOpacityLabel => Get("Settings_Appearance_Opacity_Label");
     public static string SettingsAppearanceThemeLabel => Get("Settings_Appearance_Theme_Label");
