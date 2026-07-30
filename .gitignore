@@ -1,6 +1,7 @@
 # Build output
 /build/
 /out/
+/dist/
 backend/**/build/
 frontend/**/bin/
 frontend/**/obj/
