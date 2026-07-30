@@ -54,5 +54,11 @@ public partial class MacosPresetView : UserControl, Controls.IPresetView
         Cover.GlowEnabled = glowEnabled;
     }
 
+    public void ApplyBlurredBackground(Bitmap? blurredCover, bool enabled)
+    {
+        BlurredCoverImage.Source = blurredCover;
+        BlurredCoverImage.IsVisible = enabled && blurredCover is not null;
+    }
+
     private static string Format(TimeSpan value) => value.ToString(@"m\:ss");
 }

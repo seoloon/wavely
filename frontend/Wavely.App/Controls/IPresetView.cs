@@ -15,4 +15,10 @@ public interface IPresetView
     void UpdateWaveform(ReadOnlySpan<float> bands);
     void ApplyColors(Services.WidgetColorScheme scheme, bool dynamicColorsEnabled, bool dynamicBackgroundEnabled);
     void ApplyCoverAppearance(CoverStyle shape, bool glowEnabled);
+
+    /// <summary>Forwards the shared blurred-cover bitmap to presets that host their own
+    /// dedicated blurred-cover background layer (currently Discord and macOS - see Task 17).
+    /// Default no-op body so the other presets, which rely solely on the window-level shared
+    /// blur behind their own translucent/opaque chrome, don't need any change.</summary>
+    void ApplyBlurredBackground(Avalonia.Media.Imaging.Bitmap? blurredCover, bool enabled) { }
 }

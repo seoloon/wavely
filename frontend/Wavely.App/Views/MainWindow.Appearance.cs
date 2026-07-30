@@ -69,15 +69,14 @@ public partial class MainWindow
     /// anymore (each preset owns its own <see cref="CoverArtControl"/>).</summary>
     private void ApplyBlurBackground()
     {
+        Avalonia.Media.Imaging.Bitmap? bitmap = null;
         if (_currentTrack is { CoverArt: { Length: > 0 } coverArt })
         {
             using var stream = new MemoryStream(coverArt.ToArray());
-            BlurBackgroundImage.Source = new Avalonia.Media.Imaging.Bitmap(stream);
+            bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
         }
-        else
-        {
-            BlurBackgroundImage.Source = null;
-        }
-        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && BlurBackgroundImage.Source is not null;
+        BlurBackgroundImage.Source = bitmap;
+        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && bitmap is not null;
+        _activePreset.ApplyBlurredBackground(bitmap, _config.CoverBlurEnabled);
     }
 }
