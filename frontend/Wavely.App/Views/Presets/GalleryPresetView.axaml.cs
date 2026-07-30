@@ -10,12 +10,18 @@ namespace Wavely.App.Views.Presets;
 
 public partial class GalleryPresetView : UserControl, Controls.IPresetView
 {
+    private const int WaveformBarCount = 5;
+
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
     private static readonly IBrush LightArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0xFF, 0xFF, 0xFF));
     private static readonly IBrush DarkArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0x00, 0x00, 0x00));
 
-    public GalleryPresetView() => InitializeComponent();
+    public GalleryPresetView()
+    {
+        InitializeComponent();
+        Waveform.DisplayBarCount = WaveformBarCount;
+    }
 
     public void UpdateTrack(TrackInfo track)
     {
@@ -33,14 +39,13 @@ public partial class GalleryPresetView : UserControl, Controls.IPresetView
         Progress.Percent = percent;
     }
 
-    public void UpdateWaveform(ReadOnlySpan<float> bands)
-    {
-        // Gallery has no waveform slot (matches GalleryLayout.svelte - no EqualizerBars).
-    }
+    public void UpdateWaveform(ReadOnlySpan<float> bands) => Waveform.UpdateBands(bands);
 
     public void ApplyColors(WidgetColorScheme scheme, bool dynamicColorsEnabled, bool dynamicBackgroundEnabled)
     {
-        Progress.AccentColor = dynamicColorsEnabled ? scheme.Accent : WidgetColorScheme.Default.Accent;
+        var accent = dynamicColorsEnabled ? scheme.Accent : WidgetColorScheme.Default.Accent;
+        Waveform.AccentColor = accent;
+        Progress.AccentColor = accent;
         Cover.GlowColor = dynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow;
 
         var textIsDark = dynamicColorsEnabled && scheme.TextIsDark;
