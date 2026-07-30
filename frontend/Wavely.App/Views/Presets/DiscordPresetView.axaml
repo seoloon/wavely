@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Wavely.App.Controls"
+             x:Class="Wavely.App.Views.Presets.DiscordPresetView">
+    <Border Background="#2B2D31" CornerRadius="16" Margin="8,0,0,0" Padding="16,10,16,10" ClipToBounds="True">
+        <StackPanel Spacing="8">
+            <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Grid.Column="0" Text="Wavely" FontWeight="Black" FontSize="20" Foreground="#DBDEE1" />
+                <controls:WaveformControl x:Name="Waveform" Grid.Column="1" Height="16" Width="44" />
+            </Grid>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="6">
+                    <Canvas Width="66" Height="66">
+                        <Rectangle Canvas.Left="-23" Canvas.Top="13" Width="8" Height="40" Fill="White" RadiusX="4" RadiusY="4" />
+                        <controls:CoverArtControl x:Name="Cover" Width="66" Height="66" />
+                    </Canvas>
+                    <Rectangle Width="36" Height="4" Fill="#4A4D54" RadiusX="2" RadiusY="2" />
+                </StackPanel>
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="5">
+                    <TextBlock x:Name="TitleText" FontSize="16" FontWeight="Black" Foreground="White" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="ArtistText" FontSize="12" Foreground="#B4FFFFFF" TextTrimming="CharacterEllipsis" />
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <TextBlock x:Name="PositionText" Grid.Column="0" FontSize="12" FontWeight="Black" Foreground="White" VerticalAlignment="Center" />
+                        <controls:ProgressBarControl x:Name="Progress" Grid.Column="1" Height="7" ShowThumb="True" VerticalAlignment="Center" />
+                        <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="12" FontWeight="Black" Foreground="White" VerticalAlignment="Center" />
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </StackPanel>
+    </Border>
+</UserControl>

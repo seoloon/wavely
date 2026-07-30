@@ -20,6 +20,7 @@ public static class PresetCatalog
         new("Minimal", new Size(300, 54), () => new Views.Presets.MinimalPresetView()),
         new("macOS", new Size(340, 122), () => new Views.Presets.MacosPresetView()),
         new("Shell", new Size(360, 156), () => new Views.Presets.ShellPresetView()),
+        new("Discord", new Size(360, 146), () => new Views.Presets.DiscordPresetView()),
     ];
 
     public static PresetEntry Resolve(int index) =>
