@@ -10,7 +10,7 @@
                     <TextBlock Text="– ▢ ✕" FontSize="9" Foreground="#9A9AA5" HorizontalAlignment="Right" />
                 </Grid>
             </Border>
-            <StackPanel Grid.Row="1" Margin="12,8" Spacing="3">
+            <StackPanel Grid.Row="1" Margin="12,8" Spacing="3" VerticalAlignment="Center">
                 <TextBlock FontSize="10.5">
                     <Run Text="root@wavely&gt;" Foreground="#E2A355" FontWeight="Bold" /><Run Text="./wavely" Foreground="#F0D0A8" /><Run Text=" --nowplaying" Foreground="#8A8A95" />
                 </TextBlock>
