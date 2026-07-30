@@ -1,6 +1,7 @@
 using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia.Controls;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Wavely.App.Services;
 using Wavely.Backend;
@@ -9,6 +10,11 @@ namespace Wavely.App.Views.Presets;
 
 public partial class CompactPresetView : UserControl, Controls.IPresetView
 {
+    private static readonly IBrush LightTitleForeground = Brushes.White;
+    private static readonly IBrush DarkTitleForeground = Brushes.Black;
+    private static readonly IBrush LightArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0xFF, 0xFF, 0xFF));
+    private static readonly IBrush DarkArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0x00, 0x00, 0x00));
+
     public CompactPresetView() => InitializeComponent();
 
     public void UpdateTrack(TrackInfo track)
@@ -34,6 +40,11 @@ public partial class CompactPresetView : UserControl, Controls.IPresetView
         var accent = dynamicColorsEnabled ? scheme.Accent : WidgetColorScheme.Default.Accent;
         Waveform.AccentColor = accent;
         Progress.AccentColor = accent;
+        Cover.GlowColor = dynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow;
+
+        var textIsDark = dynamicColorsEnabled && scheme.TextIsDark;
+        TitleText.Foreground = textIsDark ? DarkTitleForeground : LightTitleForeground;
+        ArtistText.Foreground = textIsDark ? DarkArtistForeground : LightArtistForeground;
     }
 
     public void ApplyCoverAppearance(CoverStyle shape, bool glowEnabled)
