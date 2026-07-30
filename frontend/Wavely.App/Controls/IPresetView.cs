@@ -23,9 +23,10 @@ public interface IPresetView
     void ApplyBlurredBackground(Avalonia.Media.Imaging.Bitmap? blurredCover, bool enabled) { }
 
     /// <summary>True when the preset hosts its own dedicated blurred-cover background layer
-    /// (see <see cref="ApplyBlurredBackground"/>), so MainWindow should suppress its shared
-    /// window-level blur entirely - including in any outer margin/gutter around the preset's
-    /// own chrome - rather than let two differently-cropped blurred renderings show at once
-    /// (see Task 24). Defaults to false for the other 5 presets, which need no change.</summary>
+    /// (see <see cref="ApplyBlurredBackground"/>) and its own complete card background, so
+    /// MainWindow should suppress its shared window-level blur AND its shared tint entirely -
+    /// including in any outer margin/gutter around the preset's own chrome - rather than let a
+    /// second, differently-treated background layer show through underneath (see Tasks 17, 24, 27).
+    /// Defaults to false for the other 5 presets, which need no change.</summary>
     bool HasOwnBlurredBackground => false;
 }

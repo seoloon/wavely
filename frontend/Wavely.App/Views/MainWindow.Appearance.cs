@@ -27,7 +27,11 @@ public partial class MainWindow
     {
         if (BackgroundTintBorder.Background is SolidColorBrush backgroundBrush)
         {
-            backgroundBrush.Opacity = _config.BackgroundOpacity;
+            // Presets with their own complete background treatment (Discord, macOS - see
+            // HasOwnBlurredBackground) fully hide the shared tint, not just scale its opacity down,
+            // so nothing shows through their own card's outer margin/gutter (e.g. behind Discord's
+            // active-indicator bar) regardless of the user's opacity/dynamic-background settings.
+            backgroundBrush.Opacity = _activePreset.HasOwnBlurredBackground ? 0.0 : _config.BackgroundOpacity;
         }
 
         WidgetColorScheme.SetCustomAccent(DynamicColorService.UnpackColor(_config.CustomAccentColor));
