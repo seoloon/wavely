@@ -60,12 +60,12 @@
                     <StackPanel Spacing="6" IsVisible="{Binding !DynamicColorsEnabled}" Margin="20,0,0,0">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearanceCustomAccentColorLabel}" />
                         <StackPanel Orientation="Horizontal" Spacing="6">
-                            <Button Width="24" Height="24" CornerRadius="12" Background="#1DB954" Command="{Binding SelectSpotifyAccentCommand}" />
-                            <Button Width="24" Height="24" CornerRadius="12" Background="#A238FF" Command="{Binding SelectDeezerAccentCommand}" />
-                            <Button Width="24" Height="24" CornerRadius="12" Background="#FA243C" Command="{Binding SelectAppleMusicAccentCommand}" />
-                            <Button Width="24" Height="24" CornerRadius="12" Background="#FF0000" Command="{Binding SelectYouTubeAccentCommand}" />
-                            <Button Width="24" Height="24" CornerRadius="12" Background="#000000" Command="{Binding SelectBlackAccentCommand}" />
-                            <Button Width="24" Height="24" CornerRadius="12" Background="#FFFFFF" Command="{Binding SelectWhiteAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#1DB954" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectSpotifyAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#A238FF" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectDeezerAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FA243C" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectAppleMusicAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FF0000" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectYouTubeAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#000000" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectBlackAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectWhiteAccentCommand}" />
                         </StackPanel>
                         <ColorPicker Color="{Binding CustomAccentColor}" HorizontalAlignment="Left" />
                     </StackPanel>

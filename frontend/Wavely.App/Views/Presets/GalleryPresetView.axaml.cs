@@ -10,7 +10,7 @@ namespace Wavely.App.Views.Presets;
 
 public partial class GalleryPresetView : UserControl, Controls.IPresetView
 {
-    private const int WaveformBarCount = 5;
+    private const int WaveformBarCount = 15;
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;

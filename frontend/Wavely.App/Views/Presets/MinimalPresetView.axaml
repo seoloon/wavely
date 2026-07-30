@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="using:Wavely.App.Controls"
              x:Class="Wavely.App.Views.Presets.MinimalPresetView">
-    <Border Background="#1AFFFFFF" CornerRadius="999" Padding="0,0,14,0" Margin="0,8">
+    <Border Background="#1AFFFFFF" CornerRadius="999" Padding="0,0,14,0" Margin="8">
         <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" VerticalAlignment="Center">
             <controls:CoverArtControl x:Name="Cover" Grid.Column="0" Width="34" Height="34" />
             <TextBlock x:Name="LabelText" Grid.Column="1" FontSize="12" Foreground="White" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />

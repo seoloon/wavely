@@ -10,7 +10,7 @@ namespace Wavely.App.Views.Presets;
 
 public partial class MacosPresetView : UserControl, Controls.IPresetView
 {
-    private const int WaveformBarCount = 8;
+    private const int WaveformBarCount = 14;
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
