@@ -22,7 +22,11 @@
                 <Border.Background>
                     <SolidColorBrush Color="#141418" Opacity="0.7" />
                 </Border.Background>
-                <ContentControl x:Name="PresetHost" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" />
+                <ContentControl x:Name="PresetHost" HorizontalAlignment="Left" VerticalAlignment="Top" RenderTransformOrigin="0,0">
+                    <ContentControl.RenderTransform>
+                        <ScaleTransform ScaleX="1" ScaleY="1" />
+                    </ContentControl.RenderTransform>
+                </ContentControl>
             </Border>
         </Grid>
     </Border>
