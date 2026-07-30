@@ -41,6 +41,7 @@ namespace Wavely.Backend
         Boolean DynamicColorsEnabled{ get; };
         Boolean DynamicBackgroundEnabled{ get; };
         Double BackgroundOpacity{ get; };
+        UInt32 CustomAccentColor{ get; };
 
         void SetGeometry(WidgetGeometry geometry);
         void SetLocked(Boolean locked);
@@ -58,5 +59,6 @@ namespace Wavely.Backend
         void SetDynamicColorsEnabled(Boolean enabled);
         void SetDynamicBackgroundEnabled(Boolean enabled);
         void SetBackgroundOpacity(Double opacity);
+        void SetCustomAccentColor(UInt32 color);
     }
 }
