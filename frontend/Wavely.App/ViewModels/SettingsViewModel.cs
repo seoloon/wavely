@@ -19,6 +19,7 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     private readonly AppConfig _config;
     private readonly MediaSessionManager _sessionManager;
     private readonly UpdateService _updateService;
+    private readonly Action _restartForUpdate;
     private bool _isLoading;
 
     public event EventHandler? ConfigChanged;
@@ -38,11 +39,12 @@ public partial class SettingsViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private bool _launchAtStartup;
 
-    public SettingsViewModel(AppConfig config, MediaSessionManager sessionManager, UpdateService updateService)
+    public SettingsViewModel(AppConfig config, MediaSessionManager sessionManager, UpdateService updateService, Action restartForUpdate)
     {
         _config = config;
         _sessionManager = sessionManager;
         _updateService = updateService;
+        _restartForUpdate = restartForUpdate;
 
         _isLoading = true;
         Locked = _config.Locked;

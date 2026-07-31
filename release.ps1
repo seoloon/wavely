@@ -43,8 +43,8 @@ vpk upload github `
     --token $env:GITHUB_TOKEN `
     --tag "v$Version" `
     --releaseName "Wavely v$Version" `
-    --publish:$Publish.IsPresent `
-    --pre:$PreRelease.IsPresent
+    --publish $($Publish.IsPresent) `
+    --pre $($PreRelease.IsPresent)
 if ($LASTEXITCODE -ne 0) { throw "vpk upload failed." }
 
 if ($Publish.IsPresent) {

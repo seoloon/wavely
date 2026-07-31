@@ -41,7 +41,7 @@ public partial class App : Application
             _mainWindow = new MainWindow(_config, _sessionManager, _waveformEngine);
             desktop.MainWindow = _mainWindow;
 
-            _trayIcon = new AppTrayIcon(_mainWindow, _config, _sessionManager, _updateService, OpenSettings);
+            _trayIcon = new AppTrayIcon(_mainWindow, _config, _sessionManager, _updateService, OpenSettings, RestartForUpdate);
 
             _sessionManager.Start();
             _waveformEngine.Start();
@@ -51,15 +51,31 @@ public partial class App : Application
             // CheckAndDownloadAsync, see Task 1).
             _ = _updateService.CheckAndDownloadAsync();
 
-            desktop.ShutdownRequested += (_, _) =>
-            {
-                _sessionManager.Stop();
-                _waveformEngine.Stop();
-                _trayIcon.Dispose();
-            };
+            desktop.ShutdownRequested += (_, _) => CleanupBeforeExit();
         }
 
         base.OnFrameworkInitializationCompleted();
+    }
+
+    /// <summary>Runs the same cleanup as a normal ShutdownRequested exit (stop the session
+    /// manager/waveform engine, dispose the tray icon) but without calling desktop.Shutdown().
+    /// Extracted so <see cref="RestartForUpdate"/> can run it too: Velopack's
+    /// ApplyUpdatesAndRestart exits the process itself immediately and never raises
+    /// ShutdownRequested, so without this the old tray icon is orphaned in the notification area
+    /// until the relaunched instance's icon replaces it (ghost icon).</summary>
+    private void CleanupBeforeExit()
+    {
+        _sessionManager?.Stop();
+        _waveformEngine?.Stop();
+        _trayIcon?.Dispose();
+    }
+
+    /// <summary>"Restart to Update" entry point - both the tray's menu item and the About tab's
+    /// command route through this instead of calling UpdateService.ApplyAndRestart() directly, so
+    /// cleanup always runs before Velopack tears the process down (see CleanupBeforeExit).</summary>
+    private void RestartForUpdate()
+    {
+        _updateService?.ApplyAndRestart(CleanupBeforeExit);
     }
 
     /// <summary>Opens the Settings window, or activates it if already open (avoids stacking
@@ -72,7 +88,7 @@ public partial class App : Application
             return;
         }
 
-        var viewModel = new SettingsViewModel(_config!, _sessionManager!, _updateService!);
+        var viewModel = new SettingsViewModel(_config!, _sessionManager!, _updateService!, RestartForUpdate);
         viewModel.ConfigChanged += (_, _) =>
         {
             _mainWindow?.RefreshFromConfig();

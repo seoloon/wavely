@@ -25,7 +25,7 @@ public sealed class AppTrayIcon : IDisposable
     private readonly NativeMenuItem _launchAtStartupItem;
     private readonly NativeMenuItem _restartToUpdateItem;
 
-    public AppTrayIcon(MainWindow window, AppConfig config, MediaSessionManager sessionManager, UpdateService updateService, Action openSettings)
+    public AppTrayIcon(MainWindow window, AppConfig config, MediaSessionManager sessionManager, UpdateService updateService, Action openSettings, Action restartForUpdate)
     {
         _window = window;
         _config = config;
@@ -41,7 +41,7 @@ public sealed class AppTrayIcon : IDisposable
         {
             IsVisible = updateService.IsUpdateReady,
         };
-        _restartToUpdateItem.Click += (_, _) => updateService.ApplyAndRestart();
+        _restartToUpdateItem.Click += (_, _) => restartForUpdate();
         updateService.UpdateReady += (_, _) => _restartToUpdateItem.IsVisible = true;
 
         _launchAtStartupItem = new NativeMenuItem(Strings.TrayIconLaunchAtStartupMenuItem)

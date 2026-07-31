@@ -138,7 +138,7 @@
     <value>Wavely v{0}</value>
   </data>
   <data name="Settings_About_DevBuild_Text" xml:space="preserve">
-    <value>Build de développement (non installée)</value>
+    <value>Version de développement (non installée)</value>
   </data>
   <data name="Settings_About_Status_NotChecked" xml:space="preserve">
     <value>Non vérifié</value>

@@ -43,7 +43,17 @@ public partial class SettingsViewModel
             : Strings.SettingsAboutDevBuildText;
 
         IsUpdateReady = _updateService.IsUpdateReady;
-        UpdateStatusText = IsUpdateReady ? Strings.SettingsAboutStatusReady : Strings.SettingsAboutStatusNotChecked;
+        UpdateStatusText = IsUpdateReady
+            ? Strings.SettingsAboutStatusReady
+            : _updateService.LastCheckResult switch
+            {
+                // Seeds the status row from a check that already completed before this window
+                // opened (typically the silent startup check in App.axaml.cs) instead of always
+                // showing "not checked" even when a real result is already known.
+                UpdateCheckResult.UpToDate => Strings.SettingsAboutStatusUpToDate,
+                UpdateCheckResult.Failed => Strings.SettingsAboutStatusFailed,
+                _ => Strings.SettingsAboutStatusNotChecked,
+            };
 
         _updateService.UpdateReady += OnUpdateServiceUpdateReady;
     }
@@ -74,7 +84,10 @@ public partial class SettingsViewModel
         var result = await _updateService.CheckAndDownloadAsync();
         UpdateStatusText = result switch
         {
-            UpdateCheckResult.NotInstalled => Strings.SettingsAboutDevBuildText,
+            // CurrentVersionText already conveys "dev build" (see InitializeAbout) - repeating
+            // that exact sentence on the status row too reads oddly stacked, so this uses the
+            // generic "not checked" status text instead.
+            UpdateCheckResult.NotInstalled => Strings.SettingsAboutStatusNotChecked,
             UpdateCheckResult.UpToDate => Strings.SettingsAboutStatusUpToDate,
             UpdateCheckResult.Ready => Strings.SettingsAboutStatusReady,
             UpdateCheckResult.Failed => Strings.SettingsAboutStatusFailed,
@@ -84,8 +97,10 @@ public partial class SettingsViewModel
         IsCheckingForUpdates = false;
     }
 
-    /// <summary>"Redémarrer pour mettre à jour" button handler - applies the already-downloaded
-    /// update and restarts the process (see UpdateService.ApplyAndRestart).</summary>
+    /// <summary>"Redémarrer pour mettre à jour" button handler - routes through App.RestartForUpdate
+    /// rather than calling UpdateService.ApplyAndRestart() directly, so App's shutdown cleanup
+    /// (tray icon disposal, etc.) runs before Velopack exits the process (see
+    /// App.axaml.cs's CleanupBeforeExit/RestartForUpdate).</summary>
     [RelayCommand]
-    private void RestartToUpdate() => _updateService.ApplyAndRestart();
+    private void RestartToUpdate() => _restartForUpdate();
 }
