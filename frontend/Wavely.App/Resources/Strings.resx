@@ -131,4 +131,37 @@
   <data name="TrayIcon_Quit_MenuItem" xml:space="preserve">
     <value>Quitter</value>
   </data>
+  <data name="Settings_Tab_About" xml:space="preserve">
+    <value>À propos</value>
+  </data>
+  <data name="Settings_About_Version_Format" xml:space="preserve">
+    <value>Wavely v{0}</value>
+  </data>
+  <data name="Settings_About_DevBuild_Text" xml:space="preserve">
+    <value>Build de développement (non installée)</value>
+  </data>
+  <data name="Settings_About_Status_NotChecked" xml:space="preserve">
+    <value>Non vérifié</value>
+  </data>
+  <data name="Settings_About_Status_Checking" xml:space="preserve">
+    <value>Vérification en cours...</value>
+  </data>
+  <data name="Settings_About_Status_UpToDate" xml:space="preserve">
+    <value>Wavely est à jour</value>
+  </data>
+  <data name="Settings_About_Status_Ready" xml:space="preserve">
+    <value>Mise à jour prête — redémarrez pour l'appliquer</value>
+  </data>
+  <data name="Settings_About_Status_Failed" xml:space="preserve">
+    <value>Échec de la vérification des mises à jour</value>
+  </data>
+  <data name="Settings_About_Check_Button" xml:space="preserve">
+    <value>Vérifier les mises à jour</value>
+  </data>
+  <data name="Settings_About_Restart_Button" xml:space="preserve">
+    <value>Redémarrer pour mettre à jour</value>
+  </data>
+  <data name="TrayIcon_RestartToUpdate_MenuItem" xml:space="preserve">
+    <value>Redémarrer pour mettre à jour</value>
+  </data>
 </root>
