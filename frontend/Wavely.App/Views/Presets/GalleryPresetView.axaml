@@ -6,8 +6,8 @@
         <controls:CoverArtControl x:Name="Cover" HorizontalAlignment="Stretch" Height="208" />
         <Border Background="#1AFFFFFF" CornerRadius="10" Padding="14,8">
             <StackPanel Spacing="3">
-                <TextBlock x:Name="TitleText" FontWeight="Bold" FontSize="14" Foreground="White" TextTrimming="CharacterEllipsis" />
-                <TextBlock x:Name="ArtistText" FontSize="12" Foreground="#B4FFFFFF" TextTrimming="CharacterEllipsis" />
+                <controls:MarqueeTextBlock x:Name="TitleText" FontWeight="Bold" FontSize="14" Foreground="White" />
+                <controls:MarqueeTextBlock x:Name="ArtistText" FontSize="12" Foreground="#B4FFFFFF" />
             </StackPanel>
         </Border>
         <Border Background="#1AFFFFFF" CornerRadius="10" Padding="14,8">

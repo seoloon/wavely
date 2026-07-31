@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="Wavely.App.Controls.MarqueeTextBlock"
+             ClipToBounds="True">
+    <Grid>
+        <TextBlock x:Name="InnerText"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   TextWrapping="NoWrap">
+            <TextBlock.RenderTransform>
+                <TranslateTransform />
+            </TextBlock.RenderTransform>
+        </TextBlock>
+    </Grid>
+</UserControl>

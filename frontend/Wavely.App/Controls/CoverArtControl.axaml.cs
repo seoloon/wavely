@@ -99,12 +99,16 @@ public partial class CoverArtControl : UserControl
 
     private void ApplyGlow()
     {
+        // The effect must live on GlowHost, not Root: Root is clipped to the cover's shape
+        // (square/squircle/vinyl, see ApplyShape) and an Effect is rendered within its target's
+        // own clip, so putting it on Root cropped the glow down to almost nothing. GlowHost wraps
+        // Root without any clip so the blur can bleed into the surrounding chrome.
         if (!_glowEnabled)
         {
-            Root.Effect = null;
+            GlowHost.Effect = null;
             return;
         }
-        Root.Effect = new DropShadowDirectionEffect
+        GlowHost.Effect = new DropShadowDirectionEffect
         {
             Color = _glowColor,
             BlurRadius = GlowBlurRadius,
