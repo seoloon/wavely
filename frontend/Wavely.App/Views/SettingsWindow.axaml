@@ -5,17 +5,30 @@
         x:Class="Wavely.App.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{x:Static res:Strings.SettingsWindowTitle}"
-        Width="420" Height="520"
+        Width="600" Height="480"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
     <DockPanel Margin="16">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
             <Button Content="{x:Static res:Strings.SettingsFooterReloadWidgetButton}" Command="{Binding ReloadWidgetCommand}" />
         </StackPanel>
-        <TabControl>
-            <TabItem Header="{x:Static res:Strings.SettingsTabBehavior}">
+        <TabControl TabStripPlacement="Left">
+            <TabControl.Styles>
+                <Style Selector="TabItem">
+                    <Setter Property="MinWidth" Value="164" />
+                    <Setter Property="Padding" Value="12,10" />
+                    <Setter Property="HorizontalContentAlignment" Value="Left" />
+                </Style>
+            </TabControl.Styles>
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="&#xE713;" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Static res:Strings.SettingsTabBehavior}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
                 <ScrollViewer>
-                <StackPanel Margin="12" Spacing="16">
+                <StackPanel Margin="20,4,4,4" Spacing="16">
                     <CheckBox Content="{x:Static res:Strings.SettingsBehaviorLockedLabel}" IsChecked="{Binding Locked}" />
                     <CheckBox Content="{x:Static res:Strings.SettingsBehaviorClickThroughLabel}" IsChecked="{Binding ClickThroughEnabled}" />
                     <Button Content="{x:Static res:Strings.SettingsBehaviorResetSizeButton}" Command="{Binding ResetSizeCommand}" HorizontalAlignment="Left" />
@@ -38,9 +51,15 @@
                 </StackPanel>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="{x:Static res:Strings.SettingsTabAppearance}">
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="&#xE790;" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Static res:Strings.SettingsTabAppearance}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
                 <ScrollViewer>
-                <StackPanel Margin="12" Spacing="16">
+                <StackPanel Margin="20,4,4,4" Spacing="16">
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearancePresetLabel}" />
                         <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.PresetNames}" SelectedIndex="{Binding PresetIndex}" HorizontalAlignment="Left" MinWidth="160" />
@@ -83,8 +102,14 @@
                 </StackPanel>
                 </ScrollViewer>
             </TabItem>
-            <TabItem Header="{x:Static res:Strings.SettingsTabAbout}">
-                <StackPanel Margin="12" Spacing="16">
+            <TabItem>
+                <TabItem.Header>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Text="&#xE946;" FontFamily="Segoe Fluent Icons" FontSize="16" VerticalAlignment="Center" />
+                        <TextBlock Text="{x:Static res:Strings.SettingsTabAbout}" VerticalAlignment="Center" />
+                    </StackPanel>
+                </TabItem.Header>
+                <StackPanel Margin="20,4,4,4" Spacing="16">
                     <TextBlock Text="{Binding CurrentVersionText}" FontWeight="Bold" FontSize="14" />
                     <TextBlock Text="{Binding UpdateStatusText}" Opacity="0.8" />
                     <Button Content="{x:Static res:Strings.SettingsAboutCheckButton}"
