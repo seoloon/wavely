@@ -117,6 +117,8 @@ Test : Redémarrer Windows → Wavely relance automatiquement
 | 4.6 | **Section Thème** | Toggle Sombre/Clair via `ThemeVariant` Avalonia | Le thème change sans restart |
 | 4.7 | **Bouton Recharger** | Appel backend : reset du hook GSMTC + re-render frontend | Le widget se "recharge" |
 
+> **Statut (2026-07-31) : Restyle visuel de `SettingsWindow` livré et vérifié par capture d'écran réelle** (voir `docs/superpowers/plans/2026-07-31-settings-window-restyle.md` et sa spec associée). Zéro changement de comportement : même bindings, même `SettingsViewModel`. Navigation par onglets remplacée par une sidebar gauche (icônes Segoe Fluent + libellés, largeur réduite après un premier passage trop large), `CheckBox` remplacés par `ToggleSwitch`, couleur d'accent de marque (`#5AAAFF`) via override de `SystemAccentColor` scopé à la fenêtre, champs regroupés en cartes arrondies theme-aware (`ThemeDictionaries` Light/Dark pour `CardBackgroundBrush`/`CardBorderBrush`). Vérifié en direct dans les deux thèmes : aucun texte ne clippe (labels longs en `TextWrapping="Wrap"`), tous les toggles déclenchent toujours leurs effets réels (click-through, hide-on-pause, lancement au démarrage, etc.). En profitant de la session, la tâche 8.5 (icône d'application) a été avancée : le vrai logo (`assets/logo.png`/`logo_trans.png`, source `.af` mise à jour) remplace le cercle placeholder du tray et l'icône .NET par défaut — `assets/icon.ico` (multi-résolution, généré depuis `logo.png`) sert d'`ApplicationIcon`, d'icône de titlebar `SettingsWindow`, et d'icône installeur Velopack (`package.ps1 --icon`).
+
 ### ✅ Checkpoint Phase 4
 ```
 Test : Ouvrir settings → Modifier un paramètre → Vérifier persistance au restart
@@ -223,7 +225,7 @@ Test : Changement de piste → mise à jour immédiate
 ### Session 15 — Packaging
 | # | Tâche |
 |---|-------|
-| 8.5 | Icône d'application (tray + window) |
+| 8.5 | Icône d'application (tray + window) — livré en avance, Phase 4 (2026-07-31) |
 | 8.6 | Versionnage (`Wavely v1.0.0` dans les settings/about) |
 | 8.7 | Build Release final : backend statically linked, frontend `dotnet publish -r win-x64 --self-contained` |
 | 8.8 | README.md avec screenshots, build instructions, feature list |
