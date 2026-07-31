@@ -44,6 +44,7 @@ vpk pack `
     --packDir "$publishDir" `
     --mainExe "Wavely.App.exe" `
     --packTitle "Wavely" `
+    --icon "$repoRoot\assets\icon.ico" `
     --outputDir "$releasesDir"
 if ($LASTEXITCODE -ne 0) { throw "vpk pack failed." }
 

@@ -1,6 +1,4 @@
 using System;
-using System.Runtime.InteropServices;
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -63,7 +61,7 @@ public sealed class AppTrayIcon : IDisposable
 
         _trayIcon = new TrayIcon
         {
-            Icon = CreatePlaceholderIcon(),
+            Icon = LoadTrayIcon(),
             ToolTipText = "Wavely",
             Menu = new NativeMenu
             {
@@ -102,40 +100,12 @@ public sealed class AppTrayIcon : IDisposable
         _config.SetLaunchAtStartup(enabled);
     }
 
-    /// <summary>
-    /// No branded asset exists yet (RULES.md SS8.5 schedules the real app icon for Phase 8
-    /// packaging); a simple filled circle keeps the tray from showing a blank/default icon.
-    /// </summary>
-    private static WindowIcon CreatePlaceholderIcon()
+    /// <summary>Loads the branded waveform mark (transparent background, reads on both light and
+    /// dark taskbars) as the tray icon (RULES.md SS8.5).</summary>
+    private static WindowIcon LoadTrayIcon()
     {
-        const int size = 32;
-        var bitmap = new WriteableBitmap(new PixelSize(size, size), new Avalonia.Vector(96, 96), PixelFormat.Bgra8888, AlphaFormat.Premul);
-        using (var buffer = bitmap.Lock())
-        {
-            var stride = buffer.RowBytes;
-            var pixels = new byte[stride * size];
-            const double center = size / 2.0;
-            const double radius = size / 2.0 - 2;
-            for (var y = 0; y < size; y++)
-            {
-                for (var x = 0; x < size; x++)
-                {
-                    var dx = x + 0.5 - center;
-                    var dy = y + 0.5 - center;
-                    if (dx * dx + dy * dy > radius * radius)
-                    {
-                        continue;
-                    }
-                    var offset = y * stride + x * 4;
-                    pixels[offset + 0] = 255; // B
-                    pixels[offset + 1] = 170; // G
-                    pixels[offset + 2] = 90;  // R
-                    pixels[offset + 3] = 255; // A
-                }
-            }
-            Marshal.Copy(pixels, 0, buffer.Address, pixels.Length);
-        }
-        return new WindowIcon(bitmap);
+        using var stream = AssetLoader.Open(new Uri("avares://Wavely.App/Assets/logo_trans.png"));
+        return new WindowIcon(new Bitmap(stream));
     }
 
     public void Dispose()

@@ -5,6 +5,7 @@
         x:Class="Wavely.App.Views.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{x:Static res:Strings.SettingsWindowTitle}"
+        Icon="avares://Wavely.App/Assets/icon.ico"
         Width="600" Height="480"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
