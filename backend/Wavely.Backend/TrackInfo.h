@@ -20,6 +20,7 @@ namespace winrt::Wavely::Backend::implementation
         /// there is no cover art or it couldn't be decoded - see Core::ExtractDominantColors.
         winrt::Windows::Storage::Streams::IBuffer DominantColors();
         std::int64_t DurationMs();
+        std::int64_t PositionMs();
         bool IsPlaying();
 
         void SetTitle(hstring const& value) { m_title = value; }
@@ -28,6 +29,7 @@ namespace winrt::Wavely::Backend::implementation
         void SetCoverArt(winrt::Windows::Storage::Streams::IBuffer const& value) { m_coverArt = value; }
         void SetDominantColors(winrt::Windows::Storage::Streams::IBuffer const& value) { m_dominantColors = value; }
         void SetDurationMs(std::int64_t value) { m_durationMs = value; }
+        void SetPositionMs(std::int64_t value) { m_positionMs = value; }
         void SetIsPlaying(bool value) { m_isPlaying = value; }
 
     private:
@@ -37,6 +39,7 @@ namespace winrt::Wavely::Backend::implementation
         winrt::Windows::Storage::Streams::IBuffer m_coverArt{ nullptr };
         winrt::Windows::Storage::Streams::IBuffer m_dominantColors{ nullptr };
         std::int64_t m_durationMs = 0;
+        std::int64_t m_positionMs = 0;
         bool m_isPlaying = false;
     };
 }

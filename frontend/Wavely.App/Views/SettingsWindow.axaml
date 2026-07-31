@@ -41,8 +41,6 @@
             <TabItem Header="{x:Static res:Strings.SettingsTabAppearance}">
                 <ScrollViewer>
                 <StackPanel Margin="12" Spacing="16">
-                    <TextBlock Text="{x:Static res:Strings.SettingsAppearanceNotYetAvailable}" TextWrapping="Wrap" Opacity="0.7" FontSize="11" />
-
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearancePresetLabel}" />
                         <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.PresetNames}" SelectedIndex="{Binding PresetIndex}" HorizontalAlignment="Left" MinWidth="160" />
@@ -59,6 +57,19 @@
                     <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicColorsLabel}" IsChecked="{Binding DynamicColorsEnabled}" />
                     <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicBackgroundLabel}" IsChecked="{Binding DynamicBackgroundEnabled}" IsEnabled="{Binding DynamicColorsEnabled}" Margin="20,0,0,0" />
 
+                    <StackPanel Spacing="6" IsVisible="{Binding !DynamicColorsEnabled}" Margin="20,0,0,0">
+                        <TextBlock Text="{x:Static res:Strings.SettingsAppearanceCustomAccentColorLabel}" />
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#1DB954" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectSpotifyAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#A238FF" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectDeezerAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FA243C" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectAppleMusicAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FF0000" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectYouTubeAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#000000" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectBlackAccentCommand}" />
+                            <Button Width="24" Height="24" CornerRadius="12" Background="#FFFFFF" BorderBrush="#40FFFFFF" BorderThickness="1" Command="{Binding SelectWhiteAccentCommand}" />
+                        </StackPanel>
+                        <ColorPicker Color="{Binding CustomAccentColor}" HorizontalAlignment="Left" />
+                    </StackPanel>
+
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearanceOpacityLabel}" />
                         <Slider Minimum="0" Maximum="100" Value="{Binding BackgroundOpacityPercent}" />
@@ -71,6 +82,20 @@
                     </StackPanel>
                 </StackPanel>
                 </ScrollViewer>
+            </TabItem>
+            <TabItem Header="{x:Static res:Strings.SettingsTabAbout}">
+                <StackPanel Margin="12" Spacing="16">
+                    <TextBlock Text="{Binding CurrentVersionText}" FontWeight="Bold" FontSize="14" />
+                    <TextBlock Text="{Binding UpdateStatusText}" Opacity="0.8" />
+                    <Button Content="{x:Static res:Strings.SettingsAboutCheckButton}"
+                            Command="{Binding CheckForUpdatesCommand}"
+                            IsEnabled="{Binding !IsCheckingForUpdates}"
+                            HorizontalAlignment="Left" />
+                    <Button Content="{x:Static res:Strings.SettingsAboutRestartButton}"
+                            Command="{Binding RestartToUpdateCommand}"
+                            IsVisible="{Binding IsUpdateReady}"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
             </TabItem>
         </TabControl>
     </DockPanel>

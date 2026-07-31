@@ -41,6 +41,8 @@ namespace winrt::Wavely::Backend::implementation
             track.SetAlbum(properties.AlbumTitle());
             const auto duration = timeline.EndTime() - timeline.StartTime();
             track.SetDurationMs(std::chrono::duration_cast<std::chrono::milliseconds>(duration).count());
+            const auto position = timeline.Position() - timeline.StartTime();
+            track.SetPositionMs(std::chrono::duration_cast<std::chrono::milliseconds>(position).count());
         }
 
         winrt::Windows::Foundation::IAsyncOperation<IBuffer> loadThumbnailBuffer(IRandomAccessStreamReference const& thumbnail)
@@ -179,12 +181,15 @@ namespace winrt::Wavely::Backend::implementation
             winrt::auto_revoke, [this](auto&&, auto&&) { refreshMediaPropertiesAsync(); });
         m_playbackInfoChangedRevoker = m_currentSession.PlaybackInfoChanged(
             winrt::auto_revoke, [this](auto&&, auto&&) { refreshPlaybackInfo(); });
+        m_timelinePropertiesChangedRevoker = m_currentSession.TimelinePropertiesChanged(
+            winrt::auto_revoke, [this](auto&&, auto&&) { refreshTimelineProperties(); });
     }
 
     void MediaSessionManager::unsubscribeFromCurrentSession()
     {
         m_mediaPropertiesChangedRevoker = {};
         m_playbackInfoChangedRevoker = {};
+        m_timelinePropertiesChangedRevoker = {};
         m_currentSession = nullptr;
     }
 
@@ -205,6 +210,31 @@ namespace winrt::Wavely::Backend::implementation
         {
             // The session ended between the event firing and this read; the next
             // SessionsChanged/PlaybackInfoChanged event will settle the state.
+        }
+    }
+
+    /// Cheap resync point for the frontend's local position interpolation (see
+    /// Services/PlaybackPositionTracker.cs) - GSMTC fires TimelinePropertiesChanged far less often
+    /// than 60fps (roughly once per second for apps that fire it at all), so this only ever updates
+    /// the anchor the frontend interpolates from, never drives a visual redraw directly.
+    void MediaSessionManager::refreshTimelineProperties()
+    {
+        if (m_stopped.load() || !m_currentSession)
+        {
+            return;
+        }
+        try
+        {
+            const auto timeline = m_currentSession.GetTimelineProperties();
+            const auto position = timeline.Position() - timeline.StartTime();
+            const auto positionMs = std::chrono::duration_cast<std::chrono::milliseconds>(position).count();
+            winrt::get_self<TrackInfo>(m_currentTrack)->SetPositionMs(positionMs);
+            m_positionChangedEvent(*this, positionMs);
+        }
+        catch (winrt::hresult_error const&)
+        {
+            // The session ended between the event firing and this read; the next
+            // SessionsChanged event will settle the state.
         }
     }
 
@@ -290,5 +320,16 @@ namespace winrt::Wavely::Backend::implementation
     void MediaSessionManager::CoverArtReceived(winrt::event_token const& token) noexcept
     {
         m_coverArtReceivedEvent.remove(token);
+    }
+
+    winrt::event_token MediaSessionManager::PositionChanged(
+        winrt::Windows::Foundation::TypedEventHandler<winrt::Wavely::Backend::MediaSessionManager, std::int64_t> const& handler)
+    {
+        return m_positionChangedEvent.add(handler);
+    }
+
+    void MediaSessionManager::PositionChanged(winrt::event_token const& token) noexcept
+    {
+        m_positionChangedEvent.remove(token);
     }
 }

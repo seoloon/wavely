@@ -23,8 +23,9 @@ public sealed class AppTrayIcon : IDisposable
     private readonly AppConfig _config;
     private readonly MediaSessionManager _sessionManager;
     private readonly NativeMenuItem _launchAtStartupItem;
+    private readonly NativeMenuItem _restartToUpdateItem;
 
-    public AppTrayIcon(MainWindow window, AppConfig config, MediaSessionManager sessionManager, Action openSettings)
+    public AppTrayIcon(MainWindow window, AppConfig config, MediaSessionManager sessionManager, UpdateService updateService, Action openSettings, Action restartForUpdate)
     {
         _window = window;
         _config = config;
@@ -35,6 +36,13 @@ public sealed class AppTrayIcon : IDisposable
 
         var reloadItem = new NativeMenuItem(Strings.TrayIconReloadWidgetMenuItem);
         reloadItem.Click += (_, _) => _sessionManager.Refresh();
+
+        _restartToUpdateItem = new NativeMenuItem(Strings.TrayIconRestartToUpdateMenuItem)
+        {
+            IsVisible = updateService.IsUpdateReady,
+        };
+        _restartToUpdateItem.Click += (_, _) => restartForUpdate();
+        updateService.UpdateReady += (_, _) => _restartToUpdateItem.IsVisible = true;
 
         _launchAtStartupItem = new NativeMenuItem(Strings.TrayIconLaunchAtStartupMenuItem)
         {
@@ -59,7 +67,7 @@ public sealed class AppTrayIcon : IDisposable
             ToolTipText = "Wavely",
             Menu = new NativeMenu
             {
-                Items = { settingsItem, reloadItem, new NativeMenuItemSeparator(), _launchAtStartupItem, new NativeMenuItemSeparator(), quitItem },
+                Items = { settingsItem, reloadItem, _restartToUpdateItem, new NativeMenuItemSeparator(), _launchAtStartupItem, new NativeMenuItemSeparator(), quitItem },
             },
         };
         _trayIcon.Clicked += OnClicked;

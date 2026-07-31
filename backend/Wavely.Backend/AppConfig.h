@@ -28,6 +28,7 @@ namespace winrt::Wavely::Backend::implementation
         bool DynamicColorsEnabled();
         bool DynamicBackgroundEnabled();
         double BackgroundOpacity();
+        std::uint32_t CustomAccentColor();
         void SetGeometry(winrt::Wavely::Backend::WidgetGeometry const& geometry);
         void SetLocked(bool locked);
         void SetClickThroughEnabled(bool enabled);
@@ -43,6 +44,7 @@ namespace winrt::Wavely::Backend::implementation
         void SetDynamicColorsEnabled(bool enabled);
         void SetDynamicBackgroundEnabled(bool enabled);
         void SetBackgroundOpacity(double opacity);
+        void SetCustomAccentColor(std::uint32_t color);
 
     private:
         void load();
@@ -64,6 +66,7 @@ namespace winrt::Wavely::Backend::implementation
         bool m_dynamicColorsEnabled = true;
         bool m_dynamicBackgroundEnabled = false;
         double m_backgroundOpacity = 1.0;
+        std::uint32_t m_customAccentColor = 0xDC5AAAFFu;
     };
 }
 namespace winrt::Wavely::Backend::factory_implementation

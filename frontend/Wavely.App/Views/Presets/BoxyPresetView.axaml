@@ -1,0 +1,26 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:controls="using:Wavely.App.Controls"
+             x:Class="Wavely.App.Views.Presets.BoxyPresetView">
+    <Grid RowDefinitions="*,Auto" RowSpacing="8" Margin="16">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" ColumnSpacing="10">
+            <controls:CoverArtControl x:Name="Cover" Grid.Column="0" Width="92" Height="92" />
+            <StackPanel Grid.Column="1" Spacing="8">
+                <Border Background="#1AFFFFFF" CornerRadius="10" Padding="14,8">
+                    <StackPanel Spacing="3">
+                        <TextBlock x:Name="TitleText" FontWeight="Bold" FontSize="15" Foreground="White" TextTrimming="CharacterEllipsis" />
+                        <TextBlock x:Name="ArtistText" FontSize="12" Foreground="#B4FFFFFF" TextTrimming="CharacterEllipsis" />
+                    </StackPanel>
+                </Border>
+                <Border Background="#1AFFFFFF" CornerRadius="10" Padding="14,8">
+                    <Grid ColumnDefinitions="Auto,*,Auto">
+                        <TextBlock x:Name="PositionText" Grid.Column="0" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+                        <controls:WaveformControl x:Name="Waveform" Grid.Column="1" Height="20" Margin="8,0" />
+                        <TextBlock x:Name="DurationText" Grid.Column="2" FontSize="12" FontWeight="Bold" Foreground="White" VerticalAlignment="Center" />
+                    </Grid>
+                </Border>
+            </StackPanel>
+        </Grid>
+        <controls:ProgressBarControl x:Name="Progress" Grid.Row="1" Height="9" />
+    </Grid>
+</UserControl>

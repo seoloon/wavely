@@ -11,6 +11,7 @@ namespace Wavely.Backend
         Windows.Storage.Streams.IBuffer CoverArt{ get; };
         Windows.Storage.Streams.IBuffer DominantColors{ get; };
         Int64 DurationMs{ get; };
+        Int64 PositionMs{ get; };
         Boolean IsPlaying{ get; };
     }
 }

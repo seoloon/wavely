@@ -1,13 +1,12 @@
 using System;
-using System.IO;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Wavely.App.Controls;
+using Wavely.App.Services;
 using Wavely.Backend;
 using Windows.Storage.Streams;
 
@@ -20,10 +19,6 @@ namespace Wavely.App.Views;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private const double DefaultWidth = 360;
-    private const double DefaultHeight = 156;
-    private const double CoverSize = 88;
-    private const double WaveformHeight = 28;
     private const double ScaleStep = 0.1;
     private const int HandleMargin = 4;
 
@@ -39,13 +34,15 @@ public partial class MainWindow : Window
     private readonly WaveformEngine _waveformEngine;
     private readonly DispatcherTimer _hideTimer;
     private readonly DispatcherTimer _hideAfterFadeTimer;
-    private readonly DispatcherTimer _vinylRotationTimer;
     private readonly ClickThroughHandle _clickThroughHandle = new();
+    private readonly PlaybackPositionTracker _positionTracker = new();
     private Win32Properties.CustomWndProcHookCallback? _wndProcHook;
     private IntPtr _hwnd;
     private bool _hiddenByAutoHide;
     private bool _isPlaying;
     private TrackInfo? _currentTrack;
+    private IPresetView _activePreset = null!;
+    private Avalonia.Size _presetBaseSize;
 
     public MainWindow(AppConfig config, MediaSessionManager sessionManager, WaveformEngine waveformEngine)
     {
@@ -70,19 +67,10 @@ public partial class MainWindow : Window
             _hiddenByAutoHide = true;
         };
 
-        // The RotateTransform is set inline under Image.RenderTransform in the AXAML (no x:Name:
-        // Avalonia's compiler rejects x:Name on a non-visual object nested in a property-element
-        // like this with AVLN2000 "Unable to resolve suitable regular or attached property Name").
-        // Resolve it once here, right after InitializeComponent(), via the CoverImage field it's
-        // assigned to, and capture that single resolved instance in the Tick closure so the 60fps
-        // timer never pays for a per-tick NameScope lookup.
-        var coverRotateTransform = (RotateTransform)CoverImage.RenderTransform!;
-        _vinylRotationTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(16) };
-        _vinylRotationTimer.Tick += (_, _) =>
-            coverRotateTransform.Angle = (coverRotateTransform.Angle
-                + VinylRotationDegreesPerSecond * _vinylRotationTimer.Interval.TotalSeconds) % 360.0;
-
         _clickThroughHandle.HandleClicked += (_, _) => SetClickThroughEnabled(false);
+
+        _positionTracker.Tick += (_, e) =>
+            Dispatcher.UIThread.Post(() => _activePreset.UpdatePlayback(_isPlaying, e.Position, e.Duration, e.Percent));
 
         PointerWheelChanged += OnPointerWheelChanged;
         PointerPressed += OnPointerPressed;
@@ -106,11 +94,12 @@ public partial class MainWindow : Window
             Win32Properties.AddWndProcHookCallback(this, _wndProcHook);
         }
 
+        ApplyPreset(_config.PresetIndex);
+
         var geometry = _config.Geometry;
         Position = new PixelPoint(geometry.PositionX, geometry.PositionY);
         ApplyScale(geometry.Scale);
         ApplyClickThrough(_config.ClickThroughEnabled);
-        ApplyAppearance();
         BlurBackgroundImage.Effect = new Avalonia.Media.BlurEffect { Radius = BackgroundBlurRadius };
         ApplyBlurBackground();
 
@@ -178,14 +167,32 @@ public partial class MainWindow : Window
         ApplyVisualScale(_config.Geometry.Scale);
     }
 
+    /// <summary>Swaps PresetHost's content to AppConfig.PresetIndex's view, resizes the window to
+    /// that preset's base size (before the user's 50%-150% scale is applied), and re-applies
+    /// everything the new view needs to render correctly (it starts blank otherwise).</summary>
+    private void ApplyPreset(int index)
+    {
+        var entry = PresetCatalog.Resolve(index);
+        var view = entry.Factory();
+        PresetHost.Content = (Control)view;
+        _activePreset = view;
+        _presetBaseSize = entry.WindowSize;
+        ApplyVisualScale(_config.Geometry.Scale);
+        ApplyAppearance();
+        ApplyCoverAppearanceOnActivePreset();
+        if (_currentTrack is not null)
+        {
+            _activePreset.UpdateTrack(_currentTrack);
+            ApplyDynamicColors(_currentTrack);
+        }
+    }
+
     private void ApplyVisualScale(double scale)
     {
-        Width = DefaultWidth * scale;
-        Height = DefaultHeight * scale;
-        CoverBorder.Width = CoverSize * scale;
-        CoverBorder.Height = CoverSize * scale;
-        Waveform.Height = WaveformHeight * scale;
-        ApplyCoverShape();
+        Width = _presetBaseSize.Width * scale;
+        Height = _presetBaseSize.Height * scale;
+        PresetHost.Width = _presetBaseSize.Width;
+        PresetHost.Height = _presetBaseSize.Height;
     }
 
     /// <summary>Re-applies state that the Settings window may have changed on the shared
@@ -194,15 +201,10 @@ public partial class MainWindow : Window
     /// its next unrelated interaction.</summary>
     public void RefreshFromConfig()
     {
-        ApplyVisualScale(_config.Geometry.Scale);
+        ApplyPreset(_config.PresetIndex);
         ApplyClickThrough(_config.ClickThroughEnabled);
         _hideTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(_config.HideOnPauseDelaySeconds, 5, 30));
-        ApplyAppearance();
         ApplyBlurBackground();
-        if (_currentTrack is not null)
-        {
-            ApplyDynamicColors(_currentTrack);
-        }
     }
 
     private void SetClickThroughEnabled(bool enabled)
@@ -272,20 +274,8 @@ public partial class MainWindow : Window
         Dispatcher.UIThread.Post(() =>
         {
             _currentTrack = track;
-            TitleText.Text = string.IsNullOrEmpty(track.Title) ? "No track playing" : track.Title;
-            ArtistText.Text = track.Artist;
-
-            var coverArt = track.CoverArt;
-            if (coverArt is { Length: > 0 })
-            {
-                var bytes = coverArt.ToArray();
-                using var stream = new MemoryStream(bytes);
-                CoverImage.Source = new Bitmap(stream);
-            }
-            else
-            {
-                CoverImage.Source = null;
-            }
+            _activePreset.UpdateTrack(track);
+            _positionTracker.Sync(track);
 
             ApplyBlurBackground();
             ApplyDynamicColors(track);
@@ -297,9 +287,7 @@ public partial class MainWindow : Window
         Dispatcher.UIThread.Post(() =>
         {
             _isPlaying = isPlaying;
-            UpdateVinylRotationState();
-
-            StatusText.Text = isPlaying ? "Playing" : "Paused";
+            _positionTracker.SetPlaying(isPlaying);
 
             if (isPlaying)
             {
@@ -328,7 +316,7 @@ public partial class MainWindow : Window
     private void OnWaveformDataReady(WaveformEngine sender, IBuffer bands)
     {
         var floats = MemoryMarshal.Cast<byte, float>(bands.ToArray()).ToArray();
-        Dispatcher.UIThread.Post(() => Waveform.UpdateBands(floats));
+        Dispatcher.UIThread.Post(() => _activePreset.UpdateWaveform(floats));
     }
 
     [DllImport("user32.dll")]

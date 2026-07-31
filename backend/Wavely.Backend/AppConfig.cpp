@@ -81,6 +81,7 @@ namespace winrt::Wavely::Backend::implementation
         m_dynamicBackgroundEnabled = json.value("dynamicBackgroundEnabled", m_dynamicBackgroundEnabled);
         m_backgroundOpacity = std::clamp(
             json.value("backgroundOpacity", m_backgroundOpacity), kMinBackgroundOpacity, kMaxBackgroundOpacity);
+        m_customAccentColor = json.value("customAccentColor", m_customAccentColor);
     }
 
     void AppConfig::saveLocked() const
@@ -104,6 +105,7 @@ namespace winrt::Wavely::Backend::implementation
         json["dynamicColorsEnabled"] = m_dynamicColorsEnabled;
         json["dynamicBackgroundEnabled"] = m_dynamicBackgroundEnabled;
         json["backgroundOpacity"] = m_backgroundOpacity;
+        json["customAccentColor"] = m_customAccentColor;
 
         std::ofstream file(settingsFilePath());
         file << json.dump(2);
@@ -256,6 +258,12 @@ namespace winrt::Wavely::Backend::implementation
         return m_backgroundOpacity;
     }
 
+    std::uint32_t AppConfig::CustomAccentColor()
+    {
+        const std::lock_guard lock(m_mutex);
+        return m_customAccentColor;
+    }
+
     void AppConfig::SetPresetIndex(std::int32_t index)
     {
         const std::lock_guard lock(m_mutex);
@@ -302,6 +310,13 @@ namespace winrt::Wavely::Backend::implementation
     {
         const std::lock_guard lock(m_mutex);
         m_backgroundOpacity = std::clamp(opacity, kMinBackgroundOpacity, kMaxBackgroundOpacity);
+        saveLocked();
+    }
+
+    void AppConfig::SetCustomAccentColor(std::uint32_t color)
+    {
+        const std::lock_guard lock(m_mutex);
+        m_customAccentColor = color;
         saveLocked();
     }
 }

@@ -16,5 +16,6 @@ namespace Wavely.Backend
         event Windows.Foundation.TypedEventHandler<MediaSessionManager, TrackInfo> TrackChanged;
         event Windows.Foundation.TypedEventHandler<MediaSessionManager, Boolean> PlaybackStateChanged;
         event Windows.Foundation.TypedEventHandler<MediaSessionManager, Windows.Storage.Streams.IBuffer> CoverArtReceived;
+        event Windows.Foundation.TypedEventHandler<MediaSessionManager, Int64> PositionChanged;
     }
 }

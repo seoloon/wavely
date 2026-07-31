@@ -1,31 +1,24 @@
+using System.IO;
+using System.Runtime.InteropServices.WindowsRuntime;
 using Avalonia;
 using Avalonia.Media;
-using Wavely.App.Core;
+using Wavely.App.Controls;
 using Wavely.App.Services;
 using Wavely.Backend;
 
 namespace Wavely.App.Views;
 
 /// <summary>
-/// Phase 6 rendering logic for <see cref="MainWindow"/> - dynamic colors, blurred background,
-/// glow, and cover shape/rotation - split into its own partial-class file so the main
+/// Phase 6/7 rendering logic for <see cref="MainWindow"/> - dynamic colors, blurred background,
+/// and cover shape/rotation - split into its own partial-class file so the main
 /// MainWindow.axaml.cs (window lifecycle, drag, click-through) doesn't grow past RULES.md's
-/// ~200-line guidance for a single class.
+/// ~200-line guidance for a single class. Since Phase 7, per-element rendering (text, waveform,
+/// glow) is delegated to whichever <see cref="IPresetView"/> is currently active - this file only
+/// still owns what's outside PresetHost (the shared background chrome behind every preset).
 /// </summary>
 public partial class MainWindow
 {
     private const double BackgroundBlurRadius = 24.0;
-    private const double GlowBlurRadius = 18.0;
-    private const double GlowOpacity = 0.9;
-    private const double CoverCornerRadius = 8.0;
-    private const double VinylRotationDegreesPerSecond = 90.0; // 360 degrees every 4 seconds.
-
-    private static readonly IBrush LightTitleForeground = Brushes.White;
-    private static readonly IBrush DarkTitleForeground = Brushes.Black;
-    private static readonly IBrush LightArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0xFF, 0xFF, 0xFF));
-    private static readonly IBrush DarkArtistForeground = new SolidColorBrush(Color.FromArgb(0xB4, 0x00, 0x00, 0x00));
-    private static readonly IBrush LightStatusForeground = new SolidColorBrush(Color.FromArgb(0x78, 0xFF, 0xFF, 0xFF));
-    private static readonly IBrush DarkStatusForeground = new SolidColorBrush(Color.FromArgb(0x78, 0x00, 0x00, 0x00));
 
     /// <summary>Applies the appearance settings that don't depend on the cover's palette:
     /// background opacity (baked into the background brush's own alpha, not the whole window's
@@ -34,8 +27,16 @@ public partial class MainWindow
     {
         if (BackgroundTintBorder.Background is SolidColorBrush backgroundBrush)
         {
-            backgroundBrush.Opacity = _config.BackgroundOpacity;
+            // Presets with their own complete background treatment (Discord, macOS - see
+            // HasOwnBlurredBackground) fully hide the shared tint, not just scale its opacity down,
+            // so nothing shows through their own card's outer margin/gutter (e.g. behind Discord's
+            // active-indicator bar) regardless of the user's opacity/dynamic-background settings.
+            backgroundBrush.Opacity = _activePreset.HasOwnBlurredBackground ? 0.0 : _config.BackgroundOpacity;
         }
+
+        _activePreset.ApplyBackgroundOpacity(_config.BackgroundOpacity);
+
+        WidgetColorScheme.SetCustomAccent(DynamicColorService.UnpackColor(_config.CustomAccentColor));
 
         if (Application.Current is { } app)
         {
@@ -45,9 +46,10 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>Applies the track's dominant-color palette to the background, waveform accent,
-    /// and text - each gated by its own AppConfig toggle, falling back to
-    /// <see cref="WidgetColorScheme.Default"/> per-element when that toggle is off.</summary>
+    /// <summary>Applies the track's dominant-color palette to the shared background tint and
+    /// forwards the resolved scheme to the active preset for its own text/waveform/glow - each
+    /// gated by its own AppConfig toggle, falling back to <see cref="WidgetColorScheme.Default"/>
+    /// per-element when that toggle is off.</summary>
     private void ApplyDynamicColors(TrackInfo track)
     {
         var scheme = DynamicColorService.Resolve(track);
@@ -57,92 +59,32 @@ public partial class MainWindow
             backgroundBrush.Color = _config.DynamicBackgroundEnabled ? scheme.Background : WidgetColorScheme.Default.Background;
         }
 
-        Waveform.AccentColor = _config.DynamicColorsEnabled ? scheme.Accent : WidgetColorScheme.Default.Accent;
+        _activePreset.ApplyColors(scheme, _config.DynamicColorsEnabled, _config.DynamicBackgroundEnabled);
+    }
 
-        var textIsDark = _config.DynamicColorsEnabled && scheme.TextIsDark;
-        TitleText.Foreground = textIsDark ? DarkTitleForeground : LightTitleForeground;
-        ArtistText.Foreground = textIsDark ? DarkArtistForeground : LightArtistForeground;
-        StatusText.Foreground = textIsDark ? DarkStatusForeground : LightStatusForeground;
-
-        ApplyGlow(_config.DynamicColorsEnabled ? scheme.Glow : WidgetColorScheme.Default.Glow);
+    /// <summary>Applies the cover's clip shape and glow toggle from AppConfig to the active
+    /// preset - split out from <see cref="ApplyDynamicColors"/> so it also runs before the first
+    /// track arrives (glow's color still defaults to <see cref="WidgetColorScheme.Default"/>
+    /// until then) and whenever the preset itself is swapped.</summary>
+    private void ApplyCoverAppearanceOnActivePreset()
+    {
+        _activePreset.ApplyCoverAppearance(_config.CoverShape, _config.CoverGlowEnabled);
     }
 
     /// <summary>Shows a heavily blurred copy of the current cover art behind the widget's
-    /// content when enabled - reuses the already-decoded CoverImage.Source bitmap rather than
-    /// re-decoding the cover, since both images just need the same pixels at different
-    /// treatments.</summary>
+    /// content when enabled - reads straight from <see cref="_currentTrack"/> rather than
+    /// through the active preset, since there's no single named cover element on MainWindow
+    /// anymore (each preset owns its own <see cref="CoverArtControl"/>).</summary>
     private void ApplyBlurBackground()
     {
-        BlurBackgroundImage.Source = CoverImage.Source;
-        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && CoverImage.Source is not null;
-    }
-
-    /// <summary>Applies (or clears) a colored halo around the cover. Color follows the dynamic
-    /// palette when enabled, otherwise a neutral white glow - independent of whether dynamic
-    /// colors are on, the glow's presence is controlled only by CoverGlowEnabled.</summary>
-    private void ApplyGlow(Color glowColor)
-    {
-        if (!_config.CoverGlowEnabled)
+        Avalonia.Media.Imaging.Bitmap? bitmap = null;
+        if (_currentTrack is { CoverArt: { Length: > 0 } coverArt })
         {
-            CoverBorder.Effect = null;
-            return;
+            using var stream = new MemoryStream(coverArt.ToArray());
+            bitmap = new Avalonia.Media.Imaging.Bitmap(stream);
         }
-
-        CoverBorder.Effect = new DropShadowDirectionEffect
-        {
-            Color = glowColor,
-            BlurRadius = GlowBlurRadius,
-            Direction = 0.0,
-            ShadowDepth = 0.0,
-            Opacity = GlowOpacity,
-        };
-    }
-
-    /// <summary>Switches the cover's clip shape between the three CoverStyle values. Square
-    /// keeps using Border's own corner-radius clipping (already verified in earlier phases);
-    /// Squircle and Vinyl switch to an explicit Clip geometry instead, since neither shape is
-    /// expressible via CornerRadius.</summary>
-    private void ApplyCoverShape()
-    {
-        var size = CoverBorder.Width;
-        switch (_config.CoverShape)
-        {
-            case CoverStyle.Square:
-                CoverBorder.ClipToBounds = true;
-                CoverBorder.CornerRadius = new CornerRadius(CoverCornerRadius);
-                CoverBorder.Clip = null;
-                VinylSpindle.IsVisible = false;
-                break;
-            case CoverStyle.Squircle:
-                CoverBorder.ClipToBounds = false;
-                CoverBorder.CornerRadius = new CornerRadius(0);
-                CoverBorder.Clip = SquircleGeometry.ForSize(size);
-                VinylSpindle.IsVisible = false;
-                break;
-            case CoverStyle.Vinyl:
-                CoverBorder.ClipToBounds = false;
-                CoverBorder.CornerRadius = new CornerRadius(0);
-                CoverBorder.Clip = new EllipseGeometry(new Rect(0, 0, size, size));
-                VinylSpindle.IsVisible = true;
-                break;
-        }
-        UpdateVinylRotationState();
-    }
-
-    /// <summary>Starts or stops the vinyl spin timer to match whether the cover is currently a
-    /// spinning vinyl (shape == Vinyl AND playing). Stopping the timer leaves the cover's rotation
-    /// angle wherever it was - resuming continues from that angle rather than snapping back to 0,
-    /// matching how a real turntable behaves.</summary>
-    private void UpdateVinylRotationState()
-    {
-        var shouldRotate = _config.CoverShape == CoverStyle.Vinyl && _isPlaying;
-        if (shouldRotate && !_vinylRotationTimer.IsEnabled)
-        {
-            _vinylRotationTimer.Start();
-        }
-        else if (!shouldRotate && _vinylRotationTimer.IsEnabled)
-        {
-            _vinylRotationTimer.Stop();
-        }
+        BlurBackgroundImage.Source = bitmap;
+        BlurBackgroundImage.IsVisible = _config.CoverBlurEnabled && bitmap is not null && !_activePreset.HasOwnBlurredBackground;
+        _activePreset.ApplyBlurredBackground(bitmap, _config.CoverBlurEnabled);
     }
 }
