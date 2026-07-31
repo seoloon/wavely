@@ -8,9 +8,12 @@
         Width="600" Height="480"
         CanResize="False"
         WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <Color x:Key="SystemAccentColor">#5AAAFF</Color>
+    </Window.Resources>
     <DockPanel Margin="16">
         <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0" Spacing="8">
-            <Button Content="{x:Static res:Strings.SettingsFooterReloadWidgetButton}" Command="{Binding ReloadWidgetCommand}" />
+            <Button Classes="accent" Content="{x:Static res:Strings.SettingsFooterReloadWidgetButton}" Command="{Binding ReloadWidgetCommand}" />
         </StackPanel>
         <TabControl TabStripPlacement="Left">
             <TabControl.Styles>
@@ -29,18 +32,30 @@
                 </TabItem.Header>
                 <ScrollViewer>
                 <StackPanel Margin="20,4,4,4" Spacing="16">
-                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorLockedLabel}" IsChecked="{Binding Locked}" />
-                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorClickThroughLabel}" IsChecked="{Binding ClickThroughEnabled}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsBehaviorLockedLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding Locked}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsBehaviorClickThroughLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding ClickThroughEnabled}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
                     <Button Content="{x:Static res:Strings.SettingsBehaviorResetSizeButton}" Command="{Binding ResetSizeCommand}" HorizontalAlignment="Left" />
 
-                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorHideOnPauseLabel}" IsChecked="{Binding HideOnPauseEnabled}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsBehaviorHideOnPauseLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding HideOnPauseEnabled}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
                     <StackPanel Spacing="4" IsEnabled="{Binding HideOnPauseEnabled}">
                         <TextBlock Text="{x:Static res:Strings.SettingsBehaviorHideOnPauseDelayLabel}" />
                         <Slider Minimum="5" Maximum="30" TickFrequency="1" IsSnapToTickEnabled="True" Value="{Binding HideOnPauseDelaySeconds}" />
                         <TextBlock Text="{Binding HideOnPauseDelaySeconds}" HorizontalAlignment="Right" Opacity="0.7" FontSize="11" />
                     </StackPanel>
 
-                    <CheckBox Content="{x:Static res:Strings.SettingsBehaviorLaunchAtStartupLabel}" IsChecked="{Binding LaunchAtStartup}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsBehaviorLaunchAtStartupLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding LaunchAtStartup}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
 
                     <StackPanel Spacing="4">
                         <TextBlock Text="{x:Static res:Strings.SettingsBehaviorLanguageLabel}" />
@@ -70,11 +85,23 @@
                         <ComboBox ItemsSource="{x:Static vm:SettingsViewModel.CoverShapeNames}" SelectedIndex="{Binding CoverShapeIndex}" HorizontalAlignment="Left" MinWidth="160" />
                     </StackPanel>
 
-                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceGlowLabel}" IsChecked="{Binding CoverGlowEnabled}" />
-                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceBlurredCoverLabel}" IsChecked="{Binding CoverBlurEnabled}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsAppearanceGlowLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding CoverGlowEnabled}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsAppearanceBlurredCoverLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding CoverBlurEnabled}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
 
-                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicColorsLabel}" IsChecked="{Binding DynamicColorsEnabled}" />
-                    <CheckBox Content="{x:Static res:Strings.SettingsAppearanceDynamicBackgroundLabel}" IsChecked="{Binding DynamicBackgroundEnabled}" IsEnabled="{Binding DynamicColorsEnabled}" Margin="20,0,0,0" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsAppearanceDynamicColorsLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding DynamicColorsEnabled}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
+                    <Grid ColumnDefinitions="*,Auto" IsEnabled="{Binding DynamicColorsEnabled}" Margin="20,0,0,0">
+                        <TextBlock Grid.Column="0" Text="{x:Static res:Strings.SettingsAppearanceDynamicBackgroundLabel}" VerticalAlignment="Center" />
+                        <ToggleSwitch Grid.Column="1" IsChecked="{Binding DynamicBackgroundEnabled}" OnContent="{x:Null}" OffContent="{x:Null}" />
+                    </Grid>
 
                     <StackPanel Spacing="6" IsVisible="{Binding !DynamicColorsEnabled}" Margin="20,0,0,0">
                         <TextBlock Text="{x:Static res:Strings.SettingsAppearanceCustomAccentColorLabel}" />
