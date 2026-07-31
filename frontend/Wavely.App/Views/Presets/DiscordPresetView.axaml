@@ -3,7 +3,7 @@
              xmlns:controls="using:Wavely.App.Controls"
              x:Class="Wavely.App.Views.Presets.DiscordPresetView">
     <Grid>
-        <Border Background="#2B2D31" CornerRadius="16" Margin="8,0,0,0" ClipToBounds="True">
+        <Border x:Name="Chrome" Background="#2B2D31" CornerRadius="16" Margin="8,0,0,0" ClipToBounds="True">
             <Grid>
                 <Image x:Name="BlurredCoverImage" Stretch="UniformToFill" IsVisible="False">
                     <Image.Effect>

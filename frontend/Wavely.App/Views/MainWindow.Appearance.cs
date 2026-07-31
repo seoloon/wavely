@@ -34,6 +34,8 @@ public partial class MainWindow
             backgroundBrush.Opacity = _activePreset.HasOwnBlurredBackground ? 0.0 : _config.BackgroundOpacity;
         }
 
+        _activePreset.ApplyBackgroundOpacity(_config.BackgroundOpacity);
+
         WidgetColorScheme.SetCustomAccent(DynamicColorService.UnpackColor(_config.CustomAccentColor));
 
         if (Application.Current is { } app)

@@ -67,5 +67,13 @@ public partial class DiscordPresetView : UserControl, Controls.IPresetView
 
     public bool HasOwnBlurredBackground => true;
 
+    public void ApplyBackgroundOpacity(double opacity)
+    {
+        if (Chrome.Background is SolidColorBrush brush)
+        {
+            brush.Opacity = opacity;
+        }
+    }
+
     private static string Format(TimeSpan value) => value.ToString(@"m\:ss");
 }

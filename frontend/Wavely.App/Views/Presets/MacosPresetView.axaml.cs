@@ -10,7 +10,7 @@ namespace Wavely.App.Views.Presets;
 
 public partial class MacosPresetView : UserControl, Controls.IPresetView
 {
-    private const int WaveformBarCount = 14;
+    private const int WaveformBarCount = 32;
 
     private static readonly IBrush LightTitleForeground = Brushes.White;
     private static readonly IBrush DarkTitleForeground = Brushes.Black;
@@ -67,6 +67,14 @@ public partial class MacosPresetView : UserControl, Controls.IPresetView
     }
 
     public bool HasOwnBlurredBackground => true;
+
+    public void ApplyBackgroundOpacity(double opacity)
+    {
+        if (Chrome.Background is SolidColorBrush brush)
+        {
+            brush.Opacity = opacity;
+        }
+    }
 
     private static string Format(TimeSpan value) => value.ToString(@"m\:ss");
 }

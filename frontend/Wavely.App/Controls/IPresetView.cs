@@ -29,4 +29,12 @@ public interface IPresetView
     /// second, differently-treated background layer show through underneath (see Tasks 17, 24, 27).
     /// Defaults to false for the other 5 presets, which need no change.</summary>
     bool HasOwnBlurredBackground => false;
+
+    /// <summary>Scales the alpha of the preset's own card background by AppConfig.BackgroundOpacity
+    /// (0-1). Only meaningful for presets where <see cref="HasOwnBlurredBackground"/> is true - those
+    /// draw their own opaque/near-opaque chrome background instead of relying on MainWindow's shared
+    /// BackgroundTintBorder (which MainWindow.Appearance.cs zeroes out for them), so without this call
+    /// the opacity slider would have no visible effect on them. Default no-op for the other 5 presets,
+    /// which stay driven by the shared tint.</summary>
+    void ApplyBackgroundOpacity(double opacity) { }
 }
