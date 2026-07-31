@@ -15,6 +15,7 @@ public partial class App : Application
     private MediaSessionManager? _sessionManager;
     private WaveformEngine? _waveformEngine;
     private AppConfig? _config;
+    private UpdateService? _updateService;
     private MainWindow? _mainWindow;
     private SettingsWindow? _settingsWindow;
 
@@ -35,14 +36,20 @@ public partial class App : Application
             _config = new AppConfig();
             _sessionManager = new MediaSessionManager();
             _waveformEngine = new WaveformEngine();
+            _updateService = new UpdateService();
 
             _mainWindow = new MainWindow(_config, _sessionManager, _waveformEngine);
             desktop.MainWindow = _mainWindow;
 
-            _trayIcon = new AppTrayIcon(_mainWindow, _config, _sessionManager, OpenSettings);
+            _trayIcon = new AppTrayIcon(_mainWindow, _config, _sessionManager, _updateService, OpenSettings);
 
             _sessionManager.Start();
             _waveformEngine.Start();
+
+            // Silent background check - never awaited, never surfaces a failure to the user
+            // beyond what the About tab/tray already show (UpdateService never throws out of
+            // CheckAndDownloadAsync, see Task 1).
+            _ = _updateService.CheckAndDownloadAsync();
 
             desktop.ShutdownRequested += (_, _) =>
             {
@@ -65,7 +72,7 @@ public partial class App : Application
             return;
         }
 
-        var viewModel = new SettingsViewModel(_config!, _sessionManager!);
+        var viewModel = new SettingsViewModel(_config!, _sessionManager!, _updateService!);
         viewModel.ConfigChanged += (_, _) =>
         {
             _mainWindow?.RefreshFromConfig();

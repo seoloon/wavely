@@ -37,10 +37,11 @@ public partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     private bool _launchAtStartup;
 
-    public SettingsViewModel(AppConfig config, MediaSessionManager sessionManager)
+    public SettingsViewModel(AppConfig config, MediaSessionManager sessionManager, UpdateService updateService)
     {
         _config = config;
         _sessionManager = sessionManager;
+        _updateService = updateService;
 
         _isLoading = true;
         Locked = _config.Locked;
@@ -58,6 +59,8 @@ public partial class SettingsViewModel : ObservableObject
         BackgroundOpacityPercent = _config.BackgroundOpacity * 100.0;
         ThemeIndex = (int)_config.Theme;
         _isLoading = false;
+
+        InitializeAbout();
     }
 
     partial void OnLockedChanged(bool value)

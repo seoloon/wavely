@@ -83,6 +83,20 @@
                 </StackPanel>
                 </ScrollViewer>
             </TabItem>
+            <TabItem Header="{x:Static res:Strings.SettingsTabAbout}">
+                <StackPanel Margin="12" Spacing="16">
+                    <TextBlock Text="{Binding CurrentVersionText}" FontWeight="Bold" FontSize="14" />
+                    <TextBlock Text="{Binding UpdateStatusText}" Opacity="0.8" />
+                    <Button Content="{x:Static res:Strings.SettingsAboutCheckButton}"
+                            Command="{Binding CheckForUpdatesCommand}"
+                            IsEnabled="{Binding !IsCheckingForUpdates}"
+                            HorizontalAlignment="Left" />
+                    <Button Content="{x:Static res:Strings.SettingsAboutRestartButton}"
+                            Command="{Binding RestartToUpdateCommand}"
+                            IsVisible="{Binding IsUpdateReady}"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
+            </TabItem>
         </TabControl>
     </DockPanel>
 </Window>
