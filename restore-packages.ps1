@@ -4,13 +4,19 @@ nuget.exe or the .NET SDK on the machine (neither is guaranteed to be present
 - see docs/TECHNICAL.md). Downloads the .nupkg directly from the NuGet v3
 flat container and extracts it, matching the layout Wavely.Backend.vcxproj's
 explicit <Import> paths expect (see docs/ADR-002-winrt-component-msbuild.md).
+
+Lives at the repo root (not backend/) so every build script is in one place -
+see BUILD.md - but the vendored packages themselves stay under backend/packages/
+because Wavely.Backend.vcxproj's <Import> paths are hardcoded relative to its
+own location (backend/Wavely.Backend/..\packages\...) and moving them would
+break the C++ build.
 #>
 param(
     [string]$Version = "3.0.260715.1"
 )
 
 $ErrorActionPreference = 'Stop'
-$packagesDir = Join-Path $PSScriptRoot "packages"
+$packagesDir = Join-Path $PSScriptRoot "backend\packages"
 $targetDir = Join-Path $packagesDir "Microsoft.Windows.CppWinRT.$Version"
 
 if (Test-Path (Join-Path $targetDir "build\native\Microsoft.Windows.CppWinRT.targets")) {

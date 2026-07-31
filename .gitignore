@@ -6,7 +6,7 @@ backend/**/build/
 frontend/**/bin/
 frontend/**/obj/
 
-# Vendored NuGet packages (restored via backend/restore-packages.ps1, see docs/TECHNICAL.md)
+# Vendored NuGet packages (restored via restore-packages.ps1, see BUILD.md)
 backend/packages/
 *.nupkg
 

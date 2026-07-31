@@ -15,12 +15,15 @@
 
 - **Visual Studio 2022** avec le workload *Desktop development with C++* (MSVC v143 + Windows SDK).
 - **.NET 8 SDK** — non installé par défaut avec Visual Studio ; installer via [dotnet.microsoft.com](https://dotnet.microsoft.com/download/dotnet/8.0) ou `winget install Microsoft.DotNet.SDK.8`. **Nécessaire pour compiler `frontend/`** — sans lui, seul `backend/` est buildable.
-- Le package NuGet `Microsoft.Windows.CppWinRT` n'est **pas commité** (voir `.gitignore`) : exécuter `backend\restore-packages.ps1` une fois pour le télécharger dans `backend/packages/` (pas de VSIX C++/WinRT requis, pas de `nuget.exe` ni de SDK .NET nécessaires pour cette étape).
+- Le package NuGet `Microsoft.Windows.CppWinRT` n'est **pas commité** (voir `.gitignore`) : exécuter `restore-packages.ps1` une fois pour le télécharger dans `backend/packages/` (pas de VSIX C++/WinRT requis, pas de `nuget.exe` ni de SDK .NET nécessaires pour cette étape).
 
 ### Build
 
+Voir `BUILD.md` à la racine pour la liste complète des scripts (build de dev, installateur,
+publication GitHub) et leurs commandes. En bref :
+
 ```
-.\backend\restore-packages.ps1   # une seule fois
+.\restore-packages.ps1   # une seule fois
 .\build.ps1
 ```
 
