@@ -9,21 +9,28 @@ namespace Wavely.App.ViewModels;
 /// Backs the "À propos" tab of the Settings window - split into its own partial-class file for
 /// the same reason as SettingsViewModel.Appearance.cs (RULES.md's ~200-line guidance). The
 /// UpdateService field/constructor wiring lives in the main SettingsViewModel.cs file alongside
-/// the other injected dependencies; this file owns only the About tab's own state and commands.
+/// the other injected dependencies; this file owns only the About tab's own state and commands,
+/// including the <see cref="Dispose"/> that undoes its <see cref="UpdateService.UpdateReady"/>
+/// subscription (the ViewModel doesn't own UpdateService's lifetime, so it must detach here
+/// rather than leaking a subscriber every time the Settings window is closed and reopened).
 /// </summary>
 public partial class SettingsViewModel
 {
-    private UpdateService _updateService = null!;
-
+    /// <summary>Display text for the "Version actuelle" row - either the installed version or the
+    /// dev-build placeholder, set once in <see cref="InitializeAbout"/>.</summary>
     [ObservableProperty]
     private string _currentVersionText = string.Empty;
 
+    /// <summary>Display text for the update-check status row (e.g. "Vérification en cours...",
+    /// "À jour", "Prêt à installer").</summary>
     [ObservableProperty]
     private string _updateStatusText = string.Empty;
 
+    /// <summary>True while an explicit "Vérifier les mises à jour" click is in flight.</summary>
     [ObservableProperty]
     private bool _isCheckingForUpdates;
 
+    /// <summary>True once an update has been downloaded and is ready to apply on restart.</summary>
     [ObservableProperty]
     private bool _isUpdateReady;
 
@@ -41,12 +48,23 @@ public partial class SettingsViewModel
         _updateService.UpdateReady += OnUpdateServiceUpdateReady;
     }
 
+    /// <summary>Detaches from the shared, app-lifetime <see cref="UpdateService"/> so this
+    /// (per-window-open) ViewModel instance doesn't outlive the Settings window it backs. Must be
+    /// called whenever the Settings window closes - see App.axaml.cs's <c>_settingsWindow.Closed</c>
+    /// handler - otherwise every open/close cycle adds another permanent subscriber.</summary>
+    public void Dispose()
+    {
+        _updateService.UpdateReady -= OnUpdateServiceUpdateReady;
+    }
+
     private void OnUpdateServiceUpdateReady(object? sender, EventArgs e)
     {
         IsUpdateReady = true;
         UpdateStatusText = Strings.SettingsAboutStatusReady;
     }
 
+    /// <summary>Explicit "Vérifier les mises à jour" button handler - runs a network check even if
+    /// one already happened silently at startup.</summary>
     [RelayCommand]
     private async Task CheckForUpdates()
     {
@@ -66,6 +84,8 @@ public partial class SettingsViewModel
         IsCheckingForUpdates = false;
     }
 
+    /// <summary>"Redémarrer pour mettre à jour" button handler - applies the already-downloaded
+    /// update and restarts the process (see UpdateService.ApplyAndRestart).</summary>
     [RelayCommand]
     private void RestartToUpdate() => _updateService.ApplyAndRestart();
 }

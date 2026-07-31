@@ -80,7 +80,14 @@ public partial class App : Application
         };
 
         _settingsWindow = new SettingsWindow(viewModel);
-        _settingsWindow.Closed += (_, _) => _settingsWindow = null;
+        _settingsWindow.Closed += (_, _) =>
+        {
+            // A fresh SettingsViewModel is constructed on every open, and it subscribes to the
+            // single app-lifetime UpdateService (see InitializeAbout in SettingsViewModel.About.cs).
+            // Without this, each open/close cycle would leak one more permanent subscriber.
+            viewModel.Dispose();
+            _settingsWindow = null;
+        };
         _settingsWindow.Show();
     }
 }

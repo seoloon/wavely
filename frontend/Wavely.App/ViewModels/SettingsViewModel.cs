@@ -14,10 +14,11 @@ namespace Wavely.App.ViewModels;
 /// the "Apparence" tab lives in the sibling <c>SettingsViewModel.Appearance.cs</c> partial-class
 /// file - see that file's doc comment for why it's split out (RULES.md's ~200-line guidance).
 /// </summary>
-public partial class SettingsViewModel : ObservableObject
+public partial class SettingsViewModel : ObservableObject, IDisposable
 {
     private readonly AppConfig _config;
     private readonly MediaSessionManager _sessionManager;
+    private readonly UpdateService _updateService;
     private bool _isLoading;
 
     public event EventHandler? ConfigChanged;
