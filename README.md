@@ -19,7 +19,7 @@ Spotify, Deezer, TIDAL, Apple Music… un seul widget pour les gouverner tous.
 [![C# / Avalonia](https://img.shields.io/badge/Frontend-C%23%20%2F%20Avalonia-8A2BE2?style=for-the-badge&logo=csharp&logoColor=white)](#)
 [![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](LICENSE.md)
 
-[![Version](https://img.shields.io/badge/version-0.2.0-8B5CF6?style=flat-square)](https://github.com/seoloon/wavely/releases)
+[![Version](https://img.shields.io/badge/version-0.2.2-8B5CF6?style=flat-square)](https://github.com/seoloon/wavely/releases)
 [![.NET](https://img.shields.io/badge/.NET-8-512BD4?style=flat-square&logo=dotnet&logoColor=white)](#)
 [![Telemetry](https://img.shields.io/badge/Telemetry-None-success?style=flat-square)](#)
 [![Auto--update](https://img.shields.io/badge/Auto--update-GitHub%20Releases-black?style=flat-square&logo=github)](#)
